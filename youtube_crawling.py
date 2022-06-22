@@ -114,5 +114,4 @@ df.index = df.index+1
 
 # to_csv 저장
 df.to_csv(save_path + '유튜브 댓글 크롤링.csv' , encoding='utf-8-sig')
-
 print('save done')
