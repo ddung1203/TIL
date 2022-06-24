@@ -1,12 +1,8 @@
 import pandas as pd
 import time
-from bs4 import BeautifulSoup as bs
-import requests
 from tqdm.auto import tqdm
-from selenium import webdriver
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -67,7 +63,7 @@ def start(url_path):
 		driver.get(url_path)
 		time.sleep(3)
 		
-		# 무한 크롤링
+		# 무한 스크롤링
 		infinite_loop()
 
 	  # 댓글 가져오기    
