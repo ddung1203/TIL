@@ -19,28 +19,28 @@ node_groups = [
     max_size      = 3
     desired_size  = 1
     instance_type = "t3.medium"
-  }
+  }, 
 	{
     name          = "Elasticsearch-data"
     min_size      = 1
     max_size      = 3
     desired_size  = 1
     instance_type = "t3.medium"
-  }
+  }, 
 	{
     name          = "Elasticsearch-client"
     min_size      = 1
     max_size      = 3
     desired_size  = 1
     instance_type = "t3.medium"
-  }
+  }, 
 	{
     name          = "Kibana"
     min_size      = 1
     max_size      = 3
     desired_size  = 1
     instance_type = "t3.medium"
-  }
+  }, 
 	{
     name          = "Fluent"
     min_size      = 1
