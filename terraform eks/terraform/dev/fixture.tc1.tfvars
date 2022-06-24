@@ -14,25 +14,39 @@ enable_ssm          = true
 managed_node_groups = []
 node_groups = [
   {
-    name          = "default"
+    name          = "Elasticsearch-master"
     min_size      = 1
     max_size      = 3
     desired_size  = 1
     instance_type = "t3.medium"
-#		instances_distribution = {
-#      on_demand_percentage_above_base_capacity = 50
-#      spot_allocation_strategy                 = "capacity-optimized"
-#    }
-#    instances_override = [
-#      {
-#        instance_type     = "t3.small"
-#        weighted_capacity = 2
-#      },
-#      {
-#        instance_type     = "t3.large"
-#        weighted_capacity = 1
-#      }
-#    ]
+  }
+	{
+    name          = "Elasticsearch-data"
+    min_size      = 1
+    max_size      = 3
+    desired_size  = 1
+    instance_type = "t3.medium"
+  }
+	{
+    name          = "Elasticsearch-client"
+    min_size      = 1
+    max_size      = 3
+    desired_size  = 1
+    instance_type = "t3.medium"
+  }
+	{
+    name          = "Kibana"
+    min_size      = 1
+    max_size      = 3
+    desired_size  = 1
+    instance_type = "t3.medium"
+  }
+	{
+    name          = "Fluent"
+    min_size      = 1
+    max_size      = 3
+    desired_size  = 1
+    instance_type = "t3.medium"
   }
 ]
 fargate_profiles = []
