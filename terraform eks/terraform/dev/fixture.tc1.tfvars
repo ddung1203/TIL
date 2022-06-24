@@ -11,9 +11,8 @@ tags = {
 }
 kubernetes_version  = "1.21"
 enable_ssm          = true
-managed_node_groups = []
-node_groups = [
-  {
+managed_node_groups = [
+	{
     name          = "Elasticsearch-master"
     min_size      = 1
     max_size      = 3
@@ -49,4 +48,5 @@ node_groups = [
     instance_type = "t3.medium"
   }
 ]
+node_groups = []
 fargate_profiles = []
