@@ -85,7 +85,7 @@ ansible --version
 192.168.100.12
 ```
 
-### Ad-hoc 명령
+## Ad-hoc 명령
 apt 모듈로 apache2 패키지 설치
 ``` bash
 ansible 192.168.100.11 -i inventory.ini -m apt -a "name=apache2 state=present" -b
@@ -122,7 +122,7 @@ ansible-playbook -i inventory.ini apache_install.yaml -b
 ```
 ![ansible_version](./img/00_2.png)
 
-### Ansible?
+## Ansible?
 IT 인프라 구성 관리 자동화 도구
 Ansible:
 - YAML: 구성 용이
