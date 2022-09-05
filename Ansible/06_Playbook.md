@@ -21,7 +21,9 @@
 ```
 
 | 참고
+
 `ansible node1 -m apt -a 'name=apache2 state=installed'`
+
 `ansible node1 -m service -a 'name=apache2 state=started enabled=yes'`
 
 플레이북 실행
@@ -43,7 +45,7 @@ ansible-playbook wordpress.yaml --check
 ``` bash
 ansible-playbook wordpress.yaml --diff
 ```
-- --check 옵션과 함께 사용하는 경우가 많다.
+--check 옵션과 함께 사용하는 경우가 많다.
 
 실행할 시스템 제한
 ``` bash

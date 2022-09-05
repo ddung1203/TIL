@@ -134,6 +134,7 @@ ansible-playbook test.yaml -e msg=korea
 
 ## 변수의 우선순위
 | https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#understanding-variable-precedence
+
 내림차순
 - 인벤토리 변수
 - 플레이 vars
@@ -148,6 +149,7 @@ ansible-playbook test.yaml -e msg=korea
 
 ## 필터
 변수에서 필요한 내용만 취득 변수에서 가공/형식변경
+
 | https://docs.ansible.com/ansible/latest/user_guide/playbooks_filters.html
 ```
 {{ msg | filter }}
