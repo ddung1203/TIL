@@ -1,0 +1,33 @@
+# 터미널 환경 구성
+ZSH이란?
+많은 새로운 기능과 플러그인 및 테마를 지원한다. BSH과 동일한 Shell을 기반으로하기 때문에 ZSH은 동일한 기능을 많이 가지고 있으며 전환이 쉽다.
+
+``` bash
+sudo apt update
+```
+
+``` bash
+sudo apt install zsh
+```
+
+``` bash
+sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+`~/.zshrc`
+```
+...
+ZSH_THEME="agnoster"
+...
+
+plugins=(
+	git
+	zsh-autosugesstions
+	zsh-completions
+	zsh-syntax-highlighting
+)
+```
+
+```
+source ~/.zshrc
+```
