@@ -11,7 +11,6 @@ def solution(num):
 		answer=answer+tmp[i]	
 	return answer
 
-	
 num = 9949999;
 ret = solution(num)
  
