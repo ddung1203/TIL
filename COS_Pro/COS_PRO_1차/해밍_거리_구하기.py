@@ -19,7 +19,6 @@ def solution(binaryA, binaryB):
 			hamming_distance += 1
 	return hamming_distance
 
-
 binaryA = "10010"
 binaryB = "110"
 ret = solution(binaryA, binaryB)

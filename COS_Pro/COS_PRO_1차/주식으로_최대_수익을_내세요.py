@@ -11,6 +11,7 @@ def solution(prices):
 		tmp = min(tmp, price)
 	return answer
 
+
 prices1 = [1, 2, 3];
 ret1 = solution(prices1);
 
