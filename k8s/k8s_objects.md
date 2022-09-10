@@ -78,7 +78,7 @@ apps/v1
 		- downtime 발생할 수 있음 : 특정 기능을 사용하기 위해 재시작
 	- Mission Critical
 - Alpha
-	- v1alphaX, c2alphaX
+	- v1alphaX, v2alphaX
 	- 기본 비활성화
 	- 개발중인 API
 
@@ -95,8 +95,8 @@ metdata:
 spec:
 ```
 
-- kind: 오브젝트의 종류
 - apiVersion: 지원하는 오브젝트의 버전
+- kind: 오브젝트의 종류
 - metadata: 오브젝트의 메타데이터
 	- 이름, 네임스페이스, 레이블, 어노테이션
 - spec: 오브젝트에 대한 선언
