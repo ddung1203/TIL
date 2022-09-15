@@ -92,7 +92,7 @@ spec:
               protocol: TCP
 ```
 
-``` bash
+``` yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -150,7 +150,6 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
-							apiVersion: apps/v1
 ```
 
 ## Jobs
