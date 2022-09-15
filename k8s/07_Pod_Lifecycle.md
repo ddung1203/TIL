@@ -42,7 +42,7 @@
 - tcpSocket
 	- 해당 포트 TCP 연결
 - grpc
-	- grcp 프로토콜 연결
+	- grpc 프로토콜 연결
 - exec
 	- 명령 실행
 	- 종료 코드 0!
