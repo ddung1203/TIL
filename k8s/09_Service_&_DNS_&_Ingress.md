@@ -8,11 +8,11 @@ kind: Service
 metadata:
   name: myweb-svc
 spec:
-	selector: # 파드 셀렉터
-		app: web
-	ports:
-		- port: 80 # 서비스 포트
-		targetPort: 8080 # 타겟(파드 포트)
+  selector: # 파드 셀렉터
+    app: web
+  ports:
+    - port: 80 # 서비스 포트
+    targetPort: 8080 # 타겟(파드 포트)
 ```
 
 ``` bash
@@ -47,15 +47,15 @@ kubectl run nettool -it --image ghcr.io/c1t1d0s7/network-multitool
 apiVersion: v1
 kind: Service
 metadata:
-	name: myweb-svc-ses
+  name: myweb-svc-ses
 spec:
-	type: ClusterIP
-	sessionAffinity: ClientIP
-	selector:
-		app: web
-	ports:
-		- port: 80
-			targetPort: 8080
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080
 ```
 
 ### Named Port
@@ -65,26 +65,26 @@ spec:
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-	name: myweb-rs-named
+  name: myweb-rs-named
 spec:
-	raplicas: 3
-	selector:
-		matchLabels:
-			app: web
-			app: dev
-	template:
-		metadata:
-			labes:
-				app: web
-				app: dev
-		spec:
-			containers:
-				- name: myweb
-					image: ghcr.io/c1t1d0s7/go-myweb
-					ports:
-						- containerPort: 8080
-							protocol: TCP
-							name: web8080
+  raplicas: 3
+  selector:
+    matchLabels:
+      app: web
+      app: dev
+  template:
+    metadata:
+      labes:
+        app: web
+        app: dev
+    spec:
+      containers:
+        - name: myweb
+          image: ghcr.io/c1t1d0s7/go-myweb
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: web8080
 ```
 
 `myweb-svc-named.yaml`
@@ -93,14 +93,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-	name: myweb-svc-named
+  name: myweb-svc-named
 spec:
-	type: ClusterIP
-	selector:
-		app: web
-	ports:
-		- port: 80
-			targetPort: web8080
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: web8080
 ```
 
 ### Multi Port
@@ -110,27 +110,27 @@ spec:
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-	name: myweb-rs-multi
+  name: myweb-rs-multi
 spec:
-	replicas: 3
-	selector:
-		matchLabels:
-			app: web
-			app: dev
-	template:
-		metadata:
-			labels:
-				app: web
-				env: dev
-		spec:
-			containers:
-				- name: myweb
-					image: ghcr.io/c1t1d0s7/go-myweb
-					ports:
-						- containerPort: 8080
-							protocol: TCP
-						- containerPort: 8443
-							protocol: TCP
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+      app: dev
+  template:
+    metadata:
+      labels:
+        app: web
+        env: dev
+    spec:
+      containers:
+        - name: myweb
+          image: ghcr.io/c1t1d0s7/go-myweb
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8443
+              protocol: TCP
 ```
 
 `myweb-svc-multi.yaml`
@@ -138,18 +138,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-	name: myweb-svc-multi
+  name: myweb-svc-multi
 spec:
-	type: ClusterIP
-	selector:
-		app: web
-	ports:
-		- port: 80
-			targetPort: 8080
-			name: http
-		- port: 443
-			targetPort: 8443
-			name: https
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
+    - port: 443
+      targetPort: 8443
+      name: https
 ```
 
 ## Service Discovery
@@ -202,15 +202,15 @@ NodePort의 범위 : 30000 - 32767
 apiVersion: v1
 kind: Service
 metadata:
-	name: myweb-svc-np
+  name: myweb-svc-np
 spec:
-	type: NodePort
-	selector:
-		app: web
-	ports:
-		- port: 80
-			targetPort: 8080
-			nodePort: 31313
+  type: NodePort
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 31313
 ```
 
 ## Service - LoadBalancer
@@ -222,15 +222,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-	name: myweb-svc-lb
+  name: myweb-svc-lb
 spec:
-	type: LoadBalancer
-	selector:
-		app: web
-	ports:
-		- port: 80
-			targetPort: 8080
-			nodePort: 31313
+  type: LoadBalancer
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 31313
 ```
 
 ### Metallb - Addon
@@ -265,10 +265,10 @@ ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b
 apiVersion: v1
 kind: Service
 metadata:
-	name: weather-ext-svc
+  name: weather-ext-svc
 spec:
-	type: External Name
-	externalName: www.google.com
+  type: External Name
+  externalName: www.google.com
 ```
 
 ## Ingress
@@ -279,19 +279,19 @@ L7 LB = ALB
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-	name: myweb-ing
+  name: myweb-ing
 spec:
-	rules:
-		- host: '*.jeonj.xyz'
-			http:
-				paths:
-					- path: /
-						pathType: Prefix
-						backend:
-							service:
-								name: myweb-svc-np
-								port:
-									number: 80
+  rules:
+    - host: '*.jeonj.xyz'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: myweb-svc-np
+                port:
+                  number: 80
 ```
 
 방법 1.
@@ -315,11 +315,11 @@ curl --resolve www.jeonj.xyz:80:192.168.100.100 http://www.jeonj.xyz
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-	name: myweb-ing
+  name: myweb-ing
 spec:
-	rules:
-		- host: '*.nip.io
-		...
+  rules:
+    - host: '*.nip.io
+    ...
 ```
 
 ``` bash
@@ -370,23 +370,23 @@ docker push X/hello:two
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-	name: one-rs
+  name: one-rs
 spec:
-	replicas: 3
-	selector:
-		matchLabels:
-			app: hello-one
-	template:
-		metadata:
-			labels:
-				app: hello-one
-		spec:
-			containers:
-				- name: hello-one
-					image: c1t1d0s7/hello:one
-					ports:
-						- containerPort: 80
-							protocol: TCP
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-one
+  template:
+    metadata:
+      labels:
+        app: hello-one
+    spec:
+      containers:
+        - name: hello-one
+          image: c1t1d0s7/hello:one
+          ports:
+            - containerPort: 80
+              protocol: TCP
 ```
 
 `two-rs.yaml`
@@ -394,23 +394,23 @@ spec:
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-	name: two-rs
+  name: two-rs
 spec:
-	replicas: 3
-	selector:
-		matchLabels:
-			app: hello-two
-	template:
-		metadata:
-			labels:
-				app: hello-two
-		spec:
-			containers:
-				- name: hello-two
-					image: c1t1d0s7/hello:two
-					ports:
-						- containerPort: 80
-							protocol: TCP
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-two
+  template:
+    metadata:
+      labels:
+        app: hello-two
+    spec:
+      containers:
+        - name: hello-two
+          image: c1t1d0s7/hello:two
+          ports:
+            - containerPort: 80
+              protocol: TCP
 ```
 
 `one-svc-np.yaml`
@@ -484,30 +484,30 @@ kubectl create -f .
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-	name: myweb-rs
+  name: myweb-rs
 spec:
-	replicas: 3
-	selector:
-		matchLabels:
-			app: web
-			env: dev
-	template:
-		metadata:
-			labels:
-				app: web
-				env: dev
-		spec:
-			containers:
-				- name: myweb
-					image: ghcr.io/c1t1d0s7/go-myweb:alpine
-					ports:
-						- containerPort: 8080
-							protocol: TCP
-					readinessProbe:
-						exec:
-							command:
-								- ls
-								- /tmp/ready
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+      env: dev
+  template:
+    metadata:
+      labels:
+        app: web
+        env: dev
+    spec:
+      containers:
+        - name: myweb
+          image: ghcr.io/c1t1d0s7/go-myweb:alpine
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - ls
+                - /tmp/ready
 ```
 
 ``` yaml
