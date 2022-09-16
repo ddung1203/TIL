@@ -1,5 +1,4 @@
 # Service & DNS & Ingress
-
 ## Service - ClusterIP
 
 `myweb-svc.yaml`
