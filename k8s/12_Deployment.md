@@ -1,5 +1,7 @@
 # Deployments
 
+Deployment는 Pod 업데이트를 위해 사용되는 기본 컨트롤러이다.
+
 ``` yaml
 apiVersion: apps/v1
 kind: Deployment
