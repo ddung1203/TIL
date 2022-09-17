@@ -67,6 +67,20 @@ kubectl apply -f myweb-rc.yaml
 
 ReplicationController -> ReplicaSets
 
+### Controller 역할
+
+1. Auto Healing
+  - Pod가 실행이 되고 있는 Node에 문제가 생겼을 경우 자동으로 복구하는 기능
+  - ex) ReplicaSet, DaemonSet
+2. Software Update
+  - Pod를 업데이트하는 기능 / 롤백 기능 또한 존재
+  - ex) Deployment
+3. Auto Scaling
+  - Pod의 리소스가 부족할 때 Pod를 추가적으로 생성하는 기능
+4. Job
+  - 일시적인 작업을 위해 필요한 순간에만 Pod를 만들었다가 삭제할 수 있는 기능
+  - ex) Job, CronJob
+
 ``` yaml
 apiVersion: apps/v1
 kind: ReplicaSets
