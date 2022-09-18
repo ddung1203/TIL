@@ -149,7 +149,7 @@ kubectl get csr
 
 상태 : Pending
 ``` bash
-kubectl certificatre approve myuser-csr
+kubectl certificate approve myuser-csr
 ```
 
 ``` bash
