@@ -202,8 +202,12 @@ kubectl drain <NODENAME> --ignore-daemonsets
 
 Control Plane Taint : "node-role.kubernetes.io/master:NoSchedule"
 
-Taint : 특정 노드에 역할을 부여
-Toleration : Taint 노드에 스케줄링 허용
+Taint(더러움) : 특정 노드에 역할을 부여
+Toleration(관용) : Taint 노드에 스케줄링 허용
+
+Taint를 설정한 노드에는 Pod들이 스케줄링 되지 않는다. Taint가 걸린 Node에 Pod들을 스케줄링 하려면 Toleration을 이용해서 지정해 주어야한다.
+Taint는 Cordon이나 Drain처럼 모든 Pod가 스케줄링 되지 않게 막는것이 아니고, Toleration을 이용한 특정 Pod들만 실행하게 하고 다른 Pod들은 들어오지 못하게 하는 역할을 한다.
+
 
 ``` bash
 kubectl taint node node1 node-role.kubernetes.io/master:NoSchedule
