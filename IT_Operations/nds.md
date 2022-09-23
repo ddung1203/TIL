@@ -126,7 +126,7 @@ IT 직종 - AWS 기술
                 
     - k8s Component
         
-        ![Untitled](/img/k8s_component.png)
+        ![Untitled](./img/k8s_component.png)
         
         - **컨트롤 플레인 컴포넌트** - 기능 제어
             - kube-apiverver - 컨트롤 플레인의 Frontend
