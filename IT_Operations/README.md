@@ -35,3 +35,5 @@
 [AWS 환경 서비스 운영](./sub/AWS_%ED%99%98%EA%B2%BD_%EC%84%9C%EB%B9%84%EC%8A%A4_%EC%9A%B4%EC%98%81.md)
 
 [프로젝트 리뷰](./sub/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8_%EB%A6%AC%EB%B7%B0.md)
+
+[cs](./cs.md)
