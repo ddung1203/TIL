@@ -1,6 +1,9 @@
 # k8s 클러스터 업그레이드
 
-> Ubuntu 패키지 저장소 변경 sed -i 's/security.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list sudo apt update
+> Ubuntu 패키지 저장소 변경
+> sed -i 's/security.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+> sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+> sudo apt update
 
 > https://kubernetes.io/ko/releases/version-skew-policy/
 
