@@ -5,6 +5,7 @@
 ### 1.1 프로젝트 생성
 
 > start.spring.io
+> 
 > Spring Web, Thymeleaf
 
 ### 1.2 라이브러리
@@ -85,9 +86,11 @@ public class HelloController {
 ```
 
 **thymeleaf 템플릿엔진 동작 확인**
+
 실행: http://localhost:8080/hello
 
 동작 환경
+
 ![00](./img/00.png)
 
 - 컨트롤러에서 리턴 값으로 문자를 반환하면 뷰 리졸버( viewResolver )가 화면을 찾아서 처리한다.
@@ -124,7 +127,8 @@ bash
 ```
 
 정적 컨텐츠 이미지
-[01](./img/01.png)
+
+![01](./img/01.png)
 
 
 ### 2.2 MVC와 템플릿 엔진
@@ -155,7 +159,8 @@ public class HelloController {
 ```
 
 MVC, 템플릿 엔진 이미지
-[02](./img/02.png)
+
+![02](./img/02.png)
 
 ### 2.3 API
 
@@ -203,7 +208,8 @@ public class HelloController {
 `@ResponseBody`를 사용하고, 객체를 반환하면 객체가 JSON으로 변환됨
 
 @ResponseBody 사용 원리
-[03](./img/03.png)
+
+![03](./img/03.png)
 
 - `@ResponseBody` 를 사용
   - HTTP의 BODY에 문자 내용을 직접 반환
