@@ -94,3 +94,35 @@ public class HelloController {
   - 스프링 부트 템플릿엔진 기본 viewName 매핑
   - `resources:templates/` +{ViewName}+ `.html`
 
+### 1.4 빌드 및 실행
+
+bash
+1. ./gradlew build
+2. cd build/libs
+3. java -jar hello-spring-0.0.1-SNAPSHOT.jar
+
+## 2. 스프링 웹 개발 기초
+
+### 2.1 정적 컨텐츠
+
+- 스프링 부트 정적 컨텐츠 기능
+> https://docs.spring.io/spring-boot/docs/2.3.1.RELEASE/reference/html/spring-boot-features.html#boot-features-spring-mvc-static-content
+
+
+`resources/static/hello-static.html`
+``` html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>static content</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+정적 컨텐츠 입니다.
+</body>
+</html>
+```
+
+정적 컨텐츠 이미지
+[01](./img/01.png)
+
