@@ -126,3 +126,34 @@ bash
 정적 컨텐츠 이미지
 [01](./img/01.png)
 
+
+### 2.2 MVC와 템플릿 엔진
+
+- MVC : Model, View, Controller
+
+`Controller`
+``` java
+@Controller
+public class HelloController {
+
+  @GetMapping("hello-mvc")
+  public String helloMvc(@RequestParam("name") String name, Model model) {
+    model.addAttribute("name", name);
+    return "hello-template";
+  }
+}
+```
+
+`View`
+`resources/templates/hello-template.html`
+``` html
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<p th:text="'hello ' + ${name}">hello! empty</p>
+</body>
+</html>
+```
+
+MVC, 템플릿 엔진 이미지
+[02](./img/02.png)
+
