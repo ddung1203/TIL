@@ -71,3 +71,13 @@ kubectl create -f myweb-dev.yaml
 ``` bash
 kubectl delete -f myweb-dev.yaml
 ```
+
+## 네임스페이스에 종속되는 쿠버네티스 오브젝트와 독립적인 오브젝트
+
+네임스페이스를 사용하면 쿠버네티스 리소스를 사용 목적에 따라 논리적으로 격리할 수 있지만, 모든 리소스가 네임스페이스에 의해 구분되는 것은 아니다.
+네임스페이스에 속하는 오브젝트의 종류는 하기 명령어로 확인할 수 있다.
+
+``` bash
+kubectl api-resources --namespace=true
+kubectl api-resources --namespace=false
+```
