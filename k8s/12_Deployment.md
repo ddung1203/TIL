@@ -95,6 +95,13 @@ spec:
             - containerPort: 8080
 ```
 
+## Deployment reason for use
+
+> Replica Set을 그대로 사용하지 않고 상위 개념인 Deployment를 사용하는 이유
+
+Deployment는 컨테이너 애플리케이션을 배포하고 관리하는 역할을 담당한다. 애플리케이션을 업데이트할 때 Replica Set의 변경 사항을 저장하는 리비전을 남겨 롤백을 가능하게 해주고, 무중단 서비스를 위해 Pod의 롤링 업데이트의 전략을 지정할 수도 있다.
+
+
 ## Deployment Update
 Deployment Update 방식
 
