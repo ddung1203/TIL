@@ -1,5 +1,10 @@
 # Docker 볼륨
 
+컨테이너의 LifeCycle과는 별개의 storage를 구축해야 한다.
+
+새로 추가한 R/W/ 가능한 empty layer 영역이 아니라 별개의 공간에 저장해야 하는데, 이를 Volume이라 한다. 이로서 컨테이너를 지워도 Volume에는 영향이 없다.
+
+
 방식
 - Bind : 볼륨은 도커 데몬이 관리하지 않음
 - Volume : 볼륨은 도커 데몬이 관리함
@@ -41,6 +46,18 @@ docker volume prune
 ``` bash
 docker run -v <VOL-NAME>:<MOUNTPOINT>[:ro] <IMAGE>
 ```
+
+``` bash
+docker volume create test-vol
+sudo ls /var/lib/docker/volumes/test-vol/_data
+
+docker run -itd -v test-vol:/test-vol ubuntu
+docker exec -it 30 bash
+cd test-vol
+touch asdasdasd
+```
+또한 컨테이너를 삭제한다고 볼륨이 삭제되는 것이 아니다.
+
 
 > 지정한 볼륨 이름이 없으면 생성
 
