@@ -1,5 +1,10 @@
 # ConfigMap & Secret
 
+ConfigMap이나 Secret을 사용하면 애플리케이션과 설정값을 별도로 분리해 관리할 수 있다. 
+
+ConfigMap은 설정값을, Secret에는 노출되어서는 안 되는 비밀값을 저장할 수 있다.
+
+
 ## 환경변수
 `pods.spec.containers.env`
 
@@ -22,6 +27,10 @@ spec:
 
 ## ConfigMap
 사용 용도
+
+ConfigMap은 일반적인 설정값을 담아 저장할 수 있는 k8s 오브젝트이며, 네임스페이스에 속하기 때문에 네임스페이스별로 ConfigMap이 존재한다.
+
+
 - 환경 변수
 - 볼륨/파일
     - 설정파일
@@ -54,6 +63,8 @@ spec:
         - configMapRef:
             name: mymessage
 ```
+
+valueFrom과 configMapKeyReg를 사용하여 여러 키:값 쌍이 들어있는 ConfigMap에서 특정 데이터만을 선택해 환경 변수로 가져올 수 있다.
 
 ``` yaml
 apiVersion: v1
@@ -109,6 +120,8 @@ value - base64 -> encoded data
 > Hashicorp Vault AWS KMS ...
 
 ### 환경변수
+
+> Opaque: '불투명한'이라는 뜻으로, 일반적으로 내부의 데이터를 들여다 볼 수 없는 데이터를 지칭
 
 `mydata.yaml`
 
@@ -172,7 +185,34 @@ spec:
         secretName: mydata
 ```
 
-## Nginx HTTPS 서버
+## 이미지 레지스트리 접근을 위한 docker-registry 타입의 시크릿 사용하기
+
+private registry, docker hub, GCR, ECR 등의 클라우드 레지스트리를 사용하고 있다면 로그인 등과 같은 인증 절차가 필요하다.
+
+`docker login` 명령어로 로그인에 성공했을 때 도커 엔진이 자동으로 생성하는 `~/.docker/config.json` 파일을 그대로 사용하는 것이다. `config.json` 파일에는 인증을 위한 정보가 담겨 있기 때문에 이를 그대로 시크릿으로 가져오면 된다.
+
+``` bash
+kubectl create secret generic registry-auth \
+--from-file=.dockerconfigjson=/home/vagrant/.docker/config.json \
+--type=kubernetes.io/dockerconfigjson
+```
+
+또는 시크릿을 생성하는 명령어에서 직접 로그인 인증 정보를 명시할 수도 있다.
+
+``` bash
+kubectl create secret docker-registry registry-auth-by-cmd \
+--docker-username=ddung1203 \
+--docker-password=PASSWORD
+```
+
+`--docker-server` 옵션을 사용하지 않으면 기본적으로 docker.io를 사용하도록 설정되지만, 다른 사설 레지스트리를 사용하려면 도메인을 입력하면 된다.
+
+## TSL 키를 저장할 수 있는 TLS 타입의 시크릿 사용하기
+
+Pod 내부의 애플리케이션이 보안 연결을 위해 인증서나 비밀키 등을 가져와야 할 때 시크릿의 값을 Pod에 제공하는 방식으로 사용할 수 있다.
+
+
+### Nginx HTTPS 서버
 
 Nginx
 - Documentation Root : /usr/share/nginx/html/
@@ -214,7 +254,7 @@ rm nginx-tls nginx-tls.csr
 - nginx-tls.key
 - nginx-tls.crt
 
-#### 설정차일
+#### 설정파일
 ConfigMap
 
 ``` bash
