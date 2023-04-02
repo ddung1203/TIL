@@ -227,22 +227,25 @@ Secret:
 mkdir x509 && cd x509
 ```
 
-Private Key
+Private Key 생성
 ``` bash
 openssl genrsa -out nginx-tls.key 2048
 ```
 
-Public Key
+Private Key를 이용한 Public Key 생성
 ``` bash
 openssl rsa -in nginx-tls.key -pubout -out nginx-tls
 ```
 
 CSR
+
+> SSL 서버를 운영하는 회사의 정보를 암호화하여 인증 기관으로 보내 인증서를 발급받게 하는 일종의 신청서
+
 ``` bash
-openssl req -new -key -out nginx-tls.csr
+openssl req -new -key nginx-tls.key -out nginx-tls.csr
 ```
 
-인증서
+인증서 자체 서명
 ``` bash
 openssl req -x509 -days 3650 -key nginx-tls.key -in nginx-tls.csr -out nginx-tls.crt
 ```
@@ -279,7 +282,7 @@ server {
 ```
 
 #### 리소스 생성
-CM 생성
+ConfigMap 생성
 
 `nginx-tls-config.yaml`
 
@@ -314,10 +317,10 @@ metadata:
   name: nginx-tls-secret
 type: kubernetes.io/tls
 data:
-  # base64 x509/nginx-tls.crt -w 0
+  # base64 x509/nginx-tls.crt -w 0 # 인코딩
   tls.crt: |
     LS0tLS1C...
-  # base64 x509/nginx-tls.key -w 0
+  # base64 x509/nginx-tls.key -w 0 # 인코딩
   tls.key: |
     LS0tLS1C...
 ```
