@@ -1,5 +1,15 @@
 # Docker
 
+## Container란?
+
+- 호스트 OS 상에 논리적인 구획을 만들고 어플리케이션을 작동시키기 위해 필요한 라이브러리나 어플리케이션 등을 하나로 모아 마치 별도의 서버인 것처럼 사용할 수 있게 만든 것이다.
+- 개별 SW의 실행 환경을 독립적으로 운용할 수 있도록 다른 실행 환경과의 간섭을 막고 실행의 독립성을 확보해주는 운영체제 수준의 격리 기술을 말한다.
+- 호스트 OS의 리소스를 논리적으로 분리시키고, 여러 개의 컨테이너가 공유하며 사용한다.
+- 오버헤드가 적기 때문에 가볍고 고속으로 작동하는 것이 특징이다.
+- VM가 가장 큰 차이점은 Container는 운영체제를 포함하지 않는다.
+- Container 기술을 사용하면 OS나 디렉토리, IP 주소와 같은 시스템 자원을 마치 각 어플리케이션이 점유하고 있는 것처럼 보이게 할 수 있다. 컨테이너는 어플리케이션 실행에 필요한 모듈을 컨테이너를 모을 수 있기 때문에 여러개의 컨테이너를 조합하여 하나의 어플리케이션을 구축하는 MSA와 친화성이 높다.
+
+
 ## Container 핵심 기술
 
 - Cgroup: Control Group (리소스 양)
@@ -91,3 +101,36 @@ docker.io/library/hello-world:latest
 - amazonlinux
 - oraclelinux
 - ... -> Base Image
+
+
+## Docker의 특징 - Layer 저장 방식
+
+Docker는 Layer의 개념을 사용하고 유니온 파일 시스템을 이용해 여러 개의 라이브러리를 하나의 파일 시스템으로 사용할 수 있게 해준다. 이미지는 여러개의 읽기 전용 레이어로 구성되고 파일이 추가되거나 수정되면 새로운 레이어가 생성된다.
+
+
+## Docker의 특징 - namespace, cgroup
+
+Docker는 Container라는 가상의 격리 환경을 만들기 위해 리눅스의 `namespace`와 `cgroup` 이라는 기능을 사용한다.
+
+### namespace
+
+- 프로세스 별로 리소스 사용을 분리한다.
+- VM에서는 각 게스트 별로 독립적인 공간을 제공하고 충돌하지 않도록 HW Resource 자체를 가상화한다.
+- 하지만 namespace의 경우, HW Resource 자체를 가상화하는 것이 아니라, Linux 내의 자원을 가상화한다.
+  - pid name spaces: 프로세스 격리 처리
+  - net name spaces: 네트워크 인터페이스
+  - ipc name spaces: IPC 자원에 대한 엑세스 관리
+  - mnt name spaces: 파일 시스템 포인트 관리
+  - uts name spaces: host name 할당
+
+
+### cgroup
+
+- Control Groups의 약자로 프로세스들이 사용할 수 있는 컴퓨팅 자원들을 제한하고 격리시킬 수 있는 리눅스 커널의 기능이다. namespace와 더불어 Docker Container에서 완벽한 격리 환경을 만드는 데에 쓰이는 중요한 기능이다.
+- cgroup를 이용하면 다음 자원들을 제한할 수 있다.
+  - memory
+  - CPU
+  - Network
+  - Device
+  - I/O
+
