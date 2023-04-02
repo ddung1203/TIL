@@ -382,6 +382,18 @@ curl -k https://192.168.100.X
 
 ### TLS/SSL Termination with Ingress
 
+종단간 암호화 방식은 클라이언트부터 서버까지 모든 통신 구간에 암호화를 하는 방식이다.
+TLS/SSL Termination 방식은 Loadbalancer가 존재하며 노출되어 있다. 
+
+클라이언트와 LB 사이에는 HTTPS를 사용하며 LB와 실제 서비스를 제공하는 서버 사이에는 HTTP를 사용한다.
+
+이점
+- 인증서 관리 용이
+- 개별 서버들이 암/복호화를 하지 않아 리소스 사용량이 낮아짐
+- 여러 보안 장치를 비암호화 구간에 구성할 수 있음
+
+
+
 `ingress-tls-secret.yaml`
 ``` yaml
 apiVersion: v1
