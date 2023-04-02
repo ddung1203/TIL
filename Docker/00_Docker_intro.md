@@ -60,6 +60,8 @@ sudo apt update
 sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 ```
 
+> `containerd.io` : Cgroup, Namespace를 사용하기 위한 라이브러리
+
 - docker-ce: Docker Engine
 - docker-ce-cli: docker command
 - containerd.io: Container Runtime Interface
