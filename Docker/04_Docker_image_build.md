@@ -190,7 +190,9 @@ FROM node:14 as builder
 WORKDIR /app
 
 COPY package.json .
-RUN npm install
+RUN npm install --no-cache && \
+    rm -rf /app/node_modules && \
+    npm install --only=production --no-cache --prefix /app
 
 COPY . .
 
@@ -203,12 +205,6 @@ COPY . .
 RUN npm install --only=production
 
 
-COPY --from=builder /app/bin ./bin
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/routes ./routes
-COPY --from=builder /app/views ./views
-COPY --from=builder /app/app.js ./
-
 EXPOSE 3000
 CMD ["npm", "start"]
 ```
@@ -218,10 +214,11 @@ alpine 이미지는 기존 node 이미지보다 최소한의 런타임 라이브
 
 Multi-stage Build에서 `FROM node:14-alpine`는 동일한 base image이며, `npm install --only=production` 명령어도 동일하게 실행된다.
 
-하지만 두 개의 Dockerfile이 복사하는 파일이 다르다. 먼저 343MB 이미지의 Dockerfile은 현재 디렉토리에 있는 모든 파일을 Docker 이미지로 복사하고 있으며, 이는 Docker 이미지의 크기를 증가시키는 주요 요인 중 하나이다.
+동일한 `npm install --only-production`을 수행하지만, 빌드 과정에서 처리되는 파일들이 다르기 때문에 이미지 크기 차이가 발생한다.
+두 번째 Dockerfile에서는 `COPY . .` 명령어로 현재 디렉토리의 모든 파일을 복사하는데, 이는 불필요한 파일까지 모두 복사되어 이미지 크기가 커질 가능성이 있다.
+세 번째 Dockerfile에서는 builder 이미지에서 필요한 파일들만 복사하고, 그 후에 최종 이미지에서 필요한 파일들만 복사하고 있다.
 
-반면에 283MB 이미지의 Dockerfile은 먼저 npm install을 실행하고, `/bin`, `/public`, `/routes`, `/views`, `app.js` 파일만 Docker 이미지로 복사한다. 따라서 이미지의 크기가 더 작다.
 
-정리하자면, 동일한 `npm install`을 수행하지만, 첫 번째 `FROM` 명령어에서는 모든 의존성이 설치된 Node.js 이미지를 기반으로 빌드를 진행한다. 그리고 두 번째 `FROM` 명령어에서는 `node:14-alpine` 이미지를 기반으로 빌드하며, `--only=production` 옵션을 통해 개발 의존성을 설치하지 않고 프로독션 의존성만 설치한다. 따라서 최종 이미지의 용량 차이가 발생한다.
+정리하자면, 첫 번째 `FROM` 명령어에서는 모든 의존성이 설치된 Node.js 이미지를 기반으로 빌드를 진행한다. 그리고 두 번째 `FROM` 명령어에서는 `node:14-alpine` 이미지를 기반으로 빌드하며, `--only=production` 옵션을 통해 개발 의존성을 설치하지 않고 프로독션 의존성만 설치한다. 따라서 최종 이미지의 용량 차이가 발생한다.
 
 > `builder` 이미지를 이용하여 `npm install`을 실행하고 빌드된 파일들만(필요한 파일들만) 복사하여 이미지를 더 가볍게 만든다.
