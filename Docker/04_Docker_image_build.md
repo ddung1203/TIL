@@ -85,3 +85,54 @@ sha256:e83f42350a11889083536c5af330dcf15fd3624f8e956f4086e1f0cfb07ff246
 sha256:4b8c655a2e61d6f017f3a5cc103fe6bbb6f71bba663085fdae697861dd57695a
 sha256:fffe7ea283ae8867d740e17f619c4db845cb0d75fc655809185e582601786521
 ```
+
+## Dockerfile로 이미지 빌드
+
+### RUN
+
+RUN - execute command, 이미지를 빌드하는 중에 실행할 명령어 지정
+
+``` bash
+RUN yum install httpd
+```
+
+Exec Form
+
+``` bash
+RUN ["yum", "install", "httpd"]
+```
+
+exec form에서의 `exec()`는 c언어 함수이자 shell의 기능인데, `exec ls`하면 `ls`가 실행이 된다.
+
+- `/bin/sh -c`
+
+Docker 컨테이너 내부에서 실행할 명령어를 지정하는 옵션
+이 옵션을 사용하면 컨테이너 내부에서 쉘을 실행하고, 해당 쉘에서 지정한 명령어를 실행한다.
+이 옵션은 새로운 프로세스를 실행하므로, 컨테이너 내부에서 실행 중인 다른 프로세스와는 별개로 실행된다.
+
+- `exec`
+
+Docker 컨테이너 내부에서 실행 중인 프로세스에 명령어를 전달하는 옵션
+이 옵션을 사용하면, 이미 실행 중인 프로세스에 명령어를 전달하여 추가적인 작업을 수행할 수 있다.
+이 옵션은 이미 실행 중인 프로세스와 연결되므로, 해당 프로세스가 종료되면 명령어도 함께 동료된다.
+
+## CMD
+
+``` bash
+CMD /usr/sbin/httpd -DFOREGROUND
+```
+
+
+``` bash
+CMD ["/usr/sbin/httpd", "-DFOREGROUND"]
+```
+
+CMD 또는 ENTRYPOINT에서는 Shell form을 사용하면 안된다.
+작동에는 문제가 없지만, stop 시에는 항상 비정상 종료가 된다.
+
+CMD를 사용할 때는 종료 시그널을 shell이 대신받아 이미지에 전달하지 않기 때문에, Docker가 kill signal을 전송시켜 프로세스가 강제로 죽는 것이다.
+
+## ENTRYPOINT
+
+Docker 컨테이너가 시작될 때 실행할 기본 명령어를 지정하는 지시어이다.
+
