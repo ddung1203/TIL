@@ -1,6 +1,12 @@
 # Service & DNS & Ingress
 ## Service - ClusterIP
 
+ClusterIP는 클러스터 내부에서 사용하는 프록시 서비스이다.
+
+ClusterIP에 요청을 보내면 여러 개의 Pod 중 하나로 자동으로 요청이 간다.
+
+ClusterIP를 사용하는 이유는 Pod의 IP는 동적이기 때문이다. 따라서 Pod의 IP와는 상관없이 액세스할 수 있도록 하는 고유 IP를 가진 Service가 필요한 것이다.
+
 `myweb-svc.yaml`
 ``` yaml
 apiVersion: v1
@@ -189,6 +195,16 @@ Pod - DNS -> coredns SVC(kube0-system NS) -> coredns POD
 
 ## Service - NodePort
 
+외부 브라우저에서도 접근할 수 있도록 NodePort라는 개념이 등장한다.
+
+NodePOrt는 노드에 노출되어 외부에서도 접근이 가능한 서비스이다.
+
+다만 노드의 IP가 변경된 경우 처리를 해줘야하기 때문에 실 서비스에서도 NodePort만으로 외부 클라이언트를 노출하는 방식은 권장되지 않는다.
+
+NodePort는 노드가 여러개 일 때 NodePort를 생성하면 모든 노드에 NodePort가 생성된다.
+
+이때 어떤 노드에 요청을 보내도 내부의 원하는 ClusterIP로 자동으로 연결되도록 작동한다.
+
 `svc.spec.type`
 
 - ClusterIP : 클러스터 내에서 사용하는 LB
@@ -214,6 +230,13 @@ spec:
 ```
 
 ## Service - LoadBalancer
+
+모든 노드에 외부 접속 분산 요청을 처리하기 위해서는 NodePort보다는 LoadBalancer를 사용하는 것이 적절하다.
+
+NodePort앞에 LB가 붙어있는 것을 볼 수 있는데 이는 단 1개의 IP만을 외부에 노출하게 되며 해당 IP로 모든 트래픽을 부하 분산하기 위한 것이다.
+
+HTTP, TCP, UDP 등 흔히 사용되는 네트워크 프로토콜과 통신할 수 있다.
+
 #### L4 LB
 
 `myweb-svc-lb.yaml`
@@ -272,6 +295,10 @@ spec:
 ```
 
 ## Ingress
+
+Ingress는 도메인 이름, 도메인 Path에 따라 내부에 있는 ClusterIP에도 같은 이름으로 연결할 수 있도록 해준다.
+
+Ingress 하나만 만들어도 여러개의 LB를 만들어 자원을 낭비하는 것을 방지할 수 있다.
 
 L7 LB = ALB
 
