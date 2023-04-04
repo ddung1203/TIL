@@ -6,6 +6,8 @@
 
 임시로 사용할 빈 볼륨, 파드 삭제 시 볼륨 같이 삭제
 
+Pod가 실행되는 노드의 디스크 공간에 마운트 된다.
+
 ``` yaml
 apiVersion: v1
 kind: Pod
@@ -80,6 +82,8 @@ spec:
 
 ## hostPath
 
+hostPath는 노드의 파일시스템의 특정 파일이나 디렉토리를 Pod에 마운트하여 사용한다.
+
 `/mnt/web_contents/index.html`
 
 ``` html
@@ -95,8 +99,45 @@ spec:
 
 ## PV & PVC
 
+Pod 내부에서 특정 데이터를 보유해야 하는 statefule한 app의 경우 stateless한 데이터를 영속적으로 저장하기 위한 방법이 필요하다.
+
+Pod에서 실행중인 애플리케이션이 디스크에 데이터를 유지해야한다면 emptyDir, hostPath를 사용할 수 없다.
+
+어떤 클러스터 노드에서도 접근할 수 있어야 하므로 NAS 유형의 스토리지에 저장이 되어야 한다.
+
+
 - PersistentVolyme : 스토리지 볼륨 정의
+
+PV는 Volume 자체를 의미한다.
+
+Kubernetes Cluster에서 관리되는 저장소로 Pod와는 별개로 관리되고 별도의 생명주기를 가지고 있어 Pod가 재실행되더라도 PV 데이터는 정책에 따라 유지/삭제된다.
+
+특징
+  - Cluster Storage의 일부
+  - Cluster Node와 같은 리소스
+  - Namespace에 속하지 않음
+  - Pod와 독립적인 lifeCycle을 가짐
+
+
 - PersistentVolumeClaim : PV를 요청
+
+PVC는 Pod의 볼륨과 PVC를 연결하는 관계 선언이다.
+
+PVC는 사용자가 PV에 요청으로 PV를 추상화해 개발자가 손쉽게 PV를 사용할 수 있도록 해주는 기능이다.
+
+사용하고 싶은 용량은 얼마인지 읽기/쓰기는 어떤 모드로 설정하고 싶은지 등을 정해서 PV에게 전달하는 역할을 한다.
+
+개발자는 Pod를 생성할 때 Volume을 정의하고 이 볼륨 정의 부분에 물리적 디스크에 대한 특성을 정의하는 것이 아닌 PVC를 지정해 관리자가 생성한 PV와 연결한다.
+
+Storage를 Pod에 직접 할당하는 것이 아닌 중간에 PVC를 통해 사용하기 때문에 Pod와 Storage 관리를 명확히 구분할 수 있다.
+
+예를 들어 가동 중인 Pod의 Storage를 변경하기 위해 Pod 자체를 재시작, 재생성 할 필요 없이 Pod에 연결된 PVC만 수정하면 Pod와 별개로 PVC를 통해 Storage를 관리할 수 있다.
+
+특징
+  - Storage에 대한 사용자의 요청
+  - PV Resource 소비
+  - 특정 Size나 Access mode를 요청
+
 
 PV, PVC 예제
 
@@ -146,7 +187,11 @@ spec:
 PV <- 1:1 -> PVC
 
 1. 프로비저닝
+  - 저장할 수 있는 공간 확보
+    - Static Provisioning
+    - Dynamic Provisioning
 2. 바인딩
+  - 상위의 Provisioning을 통해 만들어진 PV를 PVC와 연결하는 단계
 3. 사용
 4. 회수/반환(Reclaim)
   - Retain : 보존 - PV를 삭제하지 않음(Release <- PVC가 연결 X)
@@ -157,6 +202,12 @@ PV <- 1:1 -> PVC
 - ReadWriteOnce : RWO
 - ReadWriteMany : RWX
 - ReadOnlyMany : ROW
+
+### Volume 모드
+
+- filesystem : default 옵션으로 volume을 일반 파일시스템 형식으로 붙여서 사용하게 한다.
+- raw : volume을 RAW 파일시스템 형식으로 붙여서 사용하게 한다.
+- block : Filesystem이 없는 Block 장치와 연결될 때는 Block으로 설정한다.
 
 
 ### NFS를 사용한 정적 프로비저닝(Static Provision)
