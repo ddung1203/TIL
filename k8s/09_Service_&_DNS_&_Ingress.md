@@ -162,7 +162,7 @@ spec:
 
 서비스 Client가 서비스를 호출할 때 서비스 위치를 알아낼 수 있는 기능
 
-[Service & DNS & Ingress](./img/09_0.png)
+![Service & DNS & Ingress](./img/09_0.png)
 
 Service A의 인스턴스들이 생성될 때, Service A에 대한 주소를 Service Registry에 등록해 놓는다.
 
