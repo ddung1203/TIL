@@ -1,11 +1,35 @@
-# Workload - Pod
+# Workload
+
+워크로드란 Kubernetes에서 구동되는 애플리케이션이다.
+
+Pod가 실행중인 노드에 심각한 장애가 발생하면 해당 노드의 모든 Pod에 장애가 발생한다. 그러나 Pod의 LifeCycle을 관리하기 위해 각 Pod를 직접 관리할 필요가 없으며, 엔지니어 대신 Pod set을 관리하는 Workload Resources를 사용할 수 있다.
+
+## Workload Resources
+
+Pod의 LifeCycle을 관리하기 위해 사용한다.
+
+Pod의 상태가 올바른 수의 올바른 파드의 유형이 실행되고 있는지 확인하는 컨트롤러를 구성한다.
+
+Built-in Workload Resources
+
+- Deployment
+- ReplicaSet
+- StatefuleSet
+- DaemonSet
+- Job/CronJob
+- Automatic Clean-up for Finished Job
+- Replication Controller
+
+
+
+## Workload - Pod
 
 > https://kubernetes.io/ko/docs/concepts/workloads/pods/
 
 파드 : 컨테이너의 모음
 > 쿠버네티스가 관리할 수 있는 가장 작은 워크로드는 파드
 
-## 파드 생성 및 관리
+### 파드 생성 및 관리
 
 명령형 커맨드로 파드 생성
 
@@ -42,7 +66,7 @@ kubectl get pods -o json
 kubectl describe pods myweb
 ```
 
-## YAML 파일로 파드 정의
+### YAML 파일로 파드 정의
 
 `myweb.yaml`
 
@@ -76,7 +100,7 @@ kubectl describe -f myweb.yaml
 kubectl delete -f myweb.yaml
 ```
 
-## kubectl 명령의 서브 명령
+### kubectl 명령의 서브 명령
 
 - create
 - get
@@ -88,7 +112,7 @@ kubectl delete -f myweb.yaml
 - apply
 - diff
 
-## 파드 디자인
+### 파드 디자인
 
 ![04_1](./img/04_1.png)
 
@@ -119,7 +143,7 @@ Pod 내부 컨테이너 간의 IP 및 Port를 공유함으로써 상호 동작�
 - ambassador : 프록시 / LB
 - adaptor : 출력의 표준
 
-## 포트 및 포트포워딩
+### 포트 및 포트포워딩
 
 테스트 & 디버깅 목적
 
@@ -127,6 +151,6 @@ Pod 내부 컨테이너 간의 IP 및 Port를 공유함으로써 상호 동작�
 kubectl port-forward pods/myweb 8080:80
 ```
 
-## 이름 & UID
+### 이름 & UID
 이름 : 네임스페이스 유일
 UID : 클러스터에서 유일

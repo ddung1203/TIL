@@ -65,6 +65,13 @@ kubectl apply -f myweb-rc.yaml
 
 ## ReplicaSets
 
+- Pod, ReplicaSet이 어떻게 구성되어야 하는지 정의한다.
+  - ReplicaSet: 지정된 수의 Pod Replica가 항상 실행되도록 보장
+  - 단독으로 사용 가능하지만, Deployment가 많은 기능을 제공하는 상위 개념이기 때문에 Deployment를 사용하는 것이 권장된다. 
+- 버전 업데이트 등으로 인해 원하는 정의가 변경되었을 때는 현재 상태에서 원하는 상티로 바뀌도록 변경한다.
+
+
+
 ReplicationController -> ReplicaSets
 
 ### Controller 역할
@@ -137,7 +144,12 @@ spec:
 
 ## DaemonSets
 
-노드마다 하나씩 파드 배치
+- 모든 노드 또는 특정 label을 가진 노드에 하나씩의 동일한 Pod를 배포
+- Worker Node의 Resource Monitoring App이나 Log 수집기를 배포할 때 사용
+- 별도의 Replicas를 설정하지 않음
+- DaemonSet이 구동중인 Cluster에 노드가 추가되면 해당 노드에도 DaemonSet Pod가 배포
+- 삭제된 DatemonSet Pod가 다른 노드로 이동하지 않음
+
 ``` yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -168,7 +180,9 @@ spec:
 
 ## Jobs
 
-시작 -> 완료
+- 하나 이상의 Pod를 지정하고 지정된 수의 Pod를 성공적으로 실행하고 종료될 때까지 Pod의 실행을 재시도
+- 백업이나 특정 배치 파일들처럼 한번 실행하고 종료되는 성격의 작업에 사용
+
 
 ``` yaml
 apiVersion: batch/v1
@@ -232,6 +246,8 @@ spec:
 ```
 
 ## CronJob
+
+- 지정한 일정에 따라 반복적으로 Job을 실행
 
 > kubectl explain cj --api-version=batch/v1beta1
 
