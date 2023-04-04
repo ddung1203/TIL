@@ -160,6 +160,46 @@ spec:
 
 ## Service Discovery
 
+서비스 Client가 서비스를 호출할 때 서비스 위치를 알아낼 수 있는 기능
+
+[Service & DNS & Ingress](./img/09_0.png)
+
+Service A의 인스턴스들이 생성될 때, Service A에 대한 주소를 Service Registry에 등록해 놓는다.
+
+Service A를 호출하고자 하는 클라이언트는 Service Registry에 Service A의 주소를 물어보고 등록된 주소를 받아서 그 주소로 서비스를 호출한다.
+
+### Service Registry
+
+Service Registry는 DNS 레코드에 하나의 호스트명에 여러 개의 IP를 등록하는 방식으로 구현이 가능하다. 그러나 DNS 레코드 삭제 시 업데이트 되는 시간 등이 소요되기 때문에 적절하지 않다.
+
+다른 방법으로는 솔루션을 사용하는 방법이 있는데, Zookeeper나 etcd와 같은 서비스를 이요할 수 있고 또는 Netflix의 Eureka나 Hashcorp의 Consul과 같은 서비스가 있다.
+
+### Service Discovery 종류
+
+**Client Side Discovery**
+
+생성된 서비스는 Service Registry에 서비스를 등록하고, 서비스를 사용할 클라이언트는 Service Registry에서 서비스의 위치를 찾아 호출하는 방식이다.
+
+- 구현이 비교적 간단
+- 클라이언트가 사용 가능한 서비스 인스턴스에 대해 알고있기 때문에 각 서비스별 로드밸런싱 방법을 선택할 수 있다.
+
+대표적으로 Netflix OSS에서 Client-Side discovery Pattern을 제공하는 Netflix Eureka가 Service Registry 역할을 하는 OSS이다.
+
+**Server Side Discovery**
+
+서비스를 사용할 클라이언트와 Service Registry 사이에 일종의 Proxy 서버인 Load Balancer를 두는 방식이다. 클라이언트는 Load Balancer에 서비스를 요청하고 Load Balancer가 Service Registry에 호출할 서비스의 위치를 질의하는 방식이다.
+
+- Discovery의 세부 사항이 클라이언트로부터 분리되어 있다.
+- 분리되어 있어 클라이언트는 단순히 Load Balancer에 요청만 한다. 따라서 각 프로그래밍 언어 및 프레임워크에 대한 검색 로직을 구현할 필요가 없다.
+- AWS의 ELB나 GCP의 Load Balancer가 대표적이다.
+
+### Kubernetes에서의 Service Discovery
+
+**DNS를 이용하는 방법**
+
+서비스는 생성되면 `[서비스명].[네임스페이스명].svc.cluster.local`이라는 DNS 명으로 Kubernetes 내부 DNS에 등록된다. Kubernetes 클러스터 내부에서는 이 DNS 명으로 서비스에 접근이 가능하며, 이때 DNS에서 리턴해주는 IP는 External IP가 아닌 Cluster IP이다. 
+
+
 ### 환경 변수를 이용한 Service Discovery
 
 모든 파드는 실행 시 현재 시점의 서비스 목록을 환경 변수 제공
