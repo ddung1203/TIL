@@ -8,6 +8,8 @@
 
 ## Kubeadm
 
+kubeadm은 Kubernetes를 설치하기 위한 도구일 뿐 Kubernetes가 아니다.
+
 1.22.8
 
 kubeadm, kubectl, kubelet 도구 설치
