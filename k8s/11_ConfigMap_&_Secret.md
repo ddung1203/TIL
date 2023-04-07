@@ -123,6 +123,19 @@ value - base64 -> encoded data
 
 > Opaque: '불투명한'이라는 뜻으로, 일반적으로 내부의 데이터를 들여다 볼 수 없는 데이터를 지칭
 
+**Secret Type**
+
+| 빌트인 타입 | 사용처 |
+| --- | --- |
+| Opaque | 임의의 서비스 정의 데이터 |
+| kubernetes.io/service-account-token | 서비스 어카운트 토큰 |
+| kubernetes.io/dockercfg | 직렬화 된 ~/.dockercfg 파일 |
+| kubernetes.io/dockerconfigjson | 직렬화 된 ~/.docker/config.json 파일 |
+| kubernetes.io/basic-auth | 기본 인증을 위한 자격 증명 |
+| kubernetes.io/ssh-auth | SSH를 위한 자격 증명 |
+| kubernetes.io/tls | TLS 클라이언트나 서버를 위한 데이터 |
+| bootstrap.kubernetes.io/token | 부트스트랩 토큰 데이터 |
+
 `mydata.yaml`
 
 ``` yaml
@@ -132,9 +145,19 @@ metadata:
   name: mydata
 type: Opaque
 data:
-  id: YWRtaW4K
-  pwd: UEBzc3cwcmQK
+  id: YWRtaW4K # admin을 base64로 인코딩
+  pwd: UEBzc3cwcmQK # P@ssw0rd를 base64로 인코딩
 ```
+
+상기 `secret`은 민감한 데이터를 저장하기 위해 만든 것이지만 인코딩만 할 뿐 암호화를 하지 않아 안전하지 않다.
+
+``` bash
+ vagrant@k8s-node1  ~/volume  echo "YWRtaW4K" | base64 -d
+admin
+```
+
+이 경우 AWS의 KMS와 연동해서 암호화할 수 있으며(클라우드 서비스), vault로 base64를 연동해서 암호화할 수 있다(on-prem).
+
 
 ``` yaml
 apiVersion: v1
