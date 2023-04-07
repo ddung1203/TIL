@@ -2,6 +2,8 @@
 
 Deployment는 Pod 업데이트를 위해 사용되는 기본 컨트롤러이다.
 
+## Rollout
+
 ``` yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -39,18 +41,64 @@ spec:
 ```
 
 ``` bash
-kubectl rollout status deploy myweb-deploy
+ vagrant@k8s-node1  ~/deployment  kubectl rollout status deploy myweb-deploy
+deployment "myweb-deploy" successfully rolled out
 ```
 
 ``` bash
-kubectl rollout history deploy myweb-deploy
+ vagrant@k8s-node1  ~/deployment  kubectl rollout history deploy myweb-deploy
+deployment.apps/myweb-deploy 
+REVISION  CHANGE-CAUSE
+1         <none>
 ```
+
+상기의 상세 정보를 보려면 `--revision` 옵션으로 번호를 지정한다.
+
 
 ``` bash
-kubectl set image deployments myweb-deploy myweb=ghcr.io/c1t1d0s7/go-myweb:v2.0 --record
+ vagrant@k8s-node1  ~/deployment  kubectl set image deployments myweb-deploy myweb=ghcr.io/c1t1d0s7/go-myweb:v2.0 --record
+Flag --record has been deprecated, --record will be removed in the future
+deployment.apps/myweb-deploy image updated
+
+ vagrant@k8s-node1  ~/deployment  kubectl rollout status deploy myweb-deploy
+Waiting for deployment "myweb-deploy" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "myweb-deploy" rollout to finish: 1 old replicas are pending termination...
+deployment "myweb-deploy" successfully rolled out
+
+ vagrant@k8s-node1  ~/deployment  kubectl rollout history deploy myweb-deploy
+deployment.apps/myweb-deploy 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         kubectl set image deployments myweb-deploy myweb=ghcr.io/c1t1d0s7/go-myweb:v2.0 --record=true
 ```
 
-`--record` : 명령을 히스토리에 저장
+상기와 같이 변경의 사유가 출력되는데 이는 `set` 명령 실행 시 `--record` 옵션을 통해 명령을 히스토리에 저장한다.
+
+**undo**
+
+``` bash
+ vagrant@k8s-node1  ~/deployment  kubectl rollout undo deploy myweb-deploy   
+deployment.apps/myweb-deploy rolled back
+
+ vagrant@k8s-node1  ~/deployment  kubectl rollout history deploy myweb-deploy
+deployment.apps/myweb-deploy 
+REVISION  CHANGE-CAUSE
+2         kubectl set image deployments myweb-deploy myweb=ghcr.io/c1t1d0s7/go-myweb:v2.0 --record=true
+3         <none>
+
+```
+
+2.0에서 1.0으로 undo, 되돌리는 것이지만 상기와 같이 3.0으로 표시된다. 즉, 다시 되돌아간 상태를 1.0이 아닌 3.0으로 본다.
+
+``` bash
+ vagrant@k8s-node1  ~/deployment  kubectl rollout undo deploy myweb-deploy --to-revision=2
+deployment.apps/myweb-deploy rolled back
+```
+
+상기와 같이 옵션으로 번호를 지정하여 해당 버전으로 undo한다. 
+
+> 기본값은 바로 직전 버전
+
 
 ``` yaml
 apiVersion: apps/v1
@@ -65,6 +113,14 @@ metadata:
 ``` bash
 kubectl apply -f myweb-deploy.yaml
 ```
+
+`set` 명령을 사용하면 이미지가 어떻게 변경됐는지 알 수 있지만, `apply` 명령은 어떻게 변경되었는지 알기 힘들다. 따라서 파일을 수정할 떄는 상기와 같이 `annotations`을 지정한다.
+
+
+### Max Surge & Max Unavailable
+
+- `maxSurge` : Rolling Update 도중 전체 파드의 개수가 Deploy의 replicas 값보다 얼마나 더 많이 존재할 수 있는지 설정한다.
+- `maxUnavailable` : Rolling Update 도중 사용 불가능한 상태가 되는 파드의 최대 개수를 설정한다.
 
 ``` yaml
 apiVersion: apps/v1
@@ -94,6 +150,11 @@ spec:
           ports:
             - containerPort: 8080
 ```
+
+- Deployment의 replicas에 설정된 파드 개수 : 3개
+- `maxUnavailable` : 1 (전체 파드 개수가 3개 이하로 떨어지지 않음)
+- `maxSurge` : 2 (전체 파드 개수는 3 + 2 = 5개를 넘을 수 없음)
+
 
 ## Deployment reason for use
 
@@ -131,7 +192,7 @@ Recreate는 재생성이다.
 ![Blue/Green](./img/12_3.png)
 
 Blue/Green 배포는 기존 버전의 Pod를 유지한채로 새로운 버전의 Pod를 선언한 개수만큼 생성하고 Service가 트래픽을 전달하는 대상을 교체한 뒤 기존의 Pod를 삭제하는 방식이다.
-이 방법은 무준단 배포가 가능하고, 기존에 Rolling Update가 가지고 있던 V1, V2가 공존하는 순간이 있는 문제를 해결할 수 있지만, 배포시 자원을 2배로 사용한다는 단점이 있다.
+이 방법은 무중단 배포가 가능하고, 기존에 Rolling Update가 가지고 있던 V1, V2가 공존하는 순간이 있는 문제를 해결할 수 있지만, 배포시 자원을 2배로 사용한다는 단점이 있다.
 
 ### 4. Canary
 
