@@ -2,7 +2,7 @@
 
 ## Kubeconfig
 
-`~/.kube/config`
+`~/.kube/config`: Kubernetes 설정 파일
 
 ``` yaml
 apiVersion: v1
@@ -34,6 +34,47 @@ contexts:
 current-context: kubernetes-admin@cluster.local
 ```
 
+상기 파일은 `kubectl` 명령어가 api-server에 접근할 때 사용할 인증 정보를 가지고 있다. 
+
+- cluster.local : 설정하지 않아도 기본적으로 구성되는 클러스터 이름
+- client-authority-data : kubectl이 어떤 서버에 요청할 것인지에 대한 정보와 CA 인증서를 base64로 인코딩한 것
+- server : 실제 api-server의 주소
+- name : 사용자의 계정명
+- client-certificate-data, client-key-data : 사용자가 사용할 클라이언트의 인증서(공개키)와 개인키
+
+`~/.kube/config` 파일을 수정해서 새로운 cluster와 context를 추가 후 하기 명령어를 실행한다.
+
+``` yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: ==
+    server: https://127.0.0.1:6443
+  name: cluster.local
+- clusters:
+    server: https://1.1.1.1
+  name: jeonj-cluster
+contexts:
+- context:
+    cluster: cluster.local
+    user: kubernetes-admin
+  name: kubernetes-admin@cluster.local
+- context:
+    cluster: jeonj-cluster
+    user: jeonj
+  name: jeonj@jeonj-cluster
+current-context: kubernetes-admin@cluster.local
+kind: Config
+preferences: {}
+users:
+- name: jeonj
+- name: kubernetes-admin
+  user:
+    client-certificate-data: ==
+    client-key-data:  ==
+
+```
+
 ``` bash
 kubectl config view
 ```
@@ -45,7 +86,7 @@ kubectl config get-users
 ```
 
 ``` bash
-kubectl config use-context myadmin@mycluster
+kubectl config use-context jeonj@jeonj-cluster
 ```
 
 ## 인증
