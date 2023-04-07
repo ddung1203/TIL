@@ -227,6 +227,10 @@ echo "<h1> Hello NFS Volume </h1>" | sudo tee /nfsvolume/index.html
 sudo chown -R www-data:www-data /nfsvolume
 ```
 
+NFS의 경우 노드가 3개 있고 nfs volume을 공유할 때 파드를 생성하고 파드에 직접적으로 연결하는 것이 아니라 호스트에 마운팅으 시켜서 호스트의 kubelet이 제공하는 형태이다.
+
+따라서 허용하는 대역을 `192.168.100.0/24` 호스트의 네트워크 대역으로 지정해야 한다.
+
 `/etc/exports`
 
 ```
@@ -275,7 +279,7 @@ metadata:
   name: mypvc
 spec:
   accessModes:
-    - ReatWriteMany
+    - ReadWriteMany
   resources:
     requests:
       storage: 1G
@@ -314,7 +318,7 @@ spec:
 SVC
 ``` yaml
 apiVersion: v1
-kind: service
+kind: Service
 metadata:
   name: myweb-svc-lb
 spec:
@@ -326,7 +330,37 @@ spec:
     app: web
 ```
 
-## 동적 프로그래밍
+## 동적 프로비저닝
+
+Pod, PVC, PV를 모두 지운 상태에서 NFS 스토리지를 다시 사용해야 한다면 매번 PV, PVC를 만들고 Pod를 연결시켜야하는 작업을 반복해야 한다.
+
+동적 프로비저닝을 사용하면 PVC를 만들면 PVC에 바운딩 될 PV를 자동으로 만들어준다. 그리고 PV가 실제 스토리지에 연결된다.
+
+StorageClass는 PV를 만들기 위한 템플릿을 가지고 있다. PVC를 만들 때 StorageClass를 지정하면 해당 StorageClass의 정보를 가지고 PV를 만들어서 스토리지에 연결시킨다. 관리자는 StorageClass를 만들어 놓으면 되고, 사용자는 PVC를 만들 때 어떤 PVC를 사용할 것인지를 결정만 하면 된다. 그러면 해당 StorageClass에서 PV를 자동으로 만들어준다.
+
+### StorageClass
+
+PVC를 정의하면 PVC의 내용에 따라서 Kubernetes 클러스터가 물리 Dick를 생성하고, 이에 연결된 PV를 생성한다.
+
+디스크를 생성할 때 필요한 디스크의 타입을 정의할 수 있는데, 이를 StorageClass라고 하고, PVC에서 StorageClass를 지정하면 이에 맞는 디스크를 생성하도록 한다.
+
+``` yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp2
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+mountOptions:
+  - debug
+volumeBindingMode: Immediate
+```
+
+각 StorageClass에는 해당 StorageClass에 속하는 PV를 동적으로 프로비저닝할 때 사용되는 provisioner, parameters와 reclaimPolicy 필드가 포함된다.
+
 
 ### NFS Dynamic Provisioner 구성
 > https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner
@@ -437,6 +471,8 @@ parameters:
   archiveOnDelete: "false"
 ```
 
+상기의 `annotation`으로 기본 스토리지 클래스로 사용할 수 있다.
+
 ``` bash
 kubectl apply -f class.yaml
 ```
@@ -522,6 +558,7 @@ spec:
         - name: jenkins
           persistentVolumeClaim:
             claimName: jenkins
+
 # Service Config
 ---
 apiVersion: v1
