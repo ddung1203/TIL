@@ -81,6 +81,8 @@ Elastic Stack: Elasticsearch + Beat + Kibana
 
 ### Elasticsearch
 
+ElasticSearch는 검색엔진이다. 데이터를 저장하는 저장소가 있고 그 데이터 저장소에서 검색한다. ElasticSearch를 로그를 저장하고 검색하는 용도로도 쓰긴하지만 기본 용도는 검색이다. 구글 검색과 같은 검색엔진을 만들 때 사용한다. 
+
 ``` bash
 helm repo add elastic https://helm.elastic.co
 helm repo update
@@ -114,6 +116,8 @@ helm install elastic elastic/elasticsearch -f es-value.yaml -n logging
 
 ### Fluent Bit
 
+Fluent Bit의 역할을 Logging을 하는 것이다. Fluent Bit가 여러 로그 파일들을 수집한다. 그리고 수집한 로그 파일들을 ElasticSearch에게 전송한다.
+
 > https://github.com/fluent/fluent-bit-kubernetes-logging
 
 ``` bash
@@ -145,6 +149,8 @@ kubectl create -f output/elasticsearch/fluent-bit-ds.yaml
 ```
 
 ### Kibana
+
+로그를 시각적으로 관리한다.
 
 ``` bash
 helm show values elastic/kibana > kibana-value.yaml
