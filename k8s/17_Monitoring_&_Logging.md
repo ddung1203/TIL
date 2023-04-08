@@ -1,3 +1,39 @@
+# Helm
+
+Helm은 Kubernetes의 오브젝트들을 모아 하나의 패키지로 관리하기 위한 것이다.
+
+``` bash
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+```
+
+``` bash
+ vagrant@k8s-node1 > ~ > helm create mypkg         
+Creating mypkg
+ vagrant@k8s-node1 > ~/mypkg > tree
+.
+├── Chart.yaml
+├── charts
+├── templates
+│   ├── NOTES.txt
+│   ├── _helpers.tpl
+│   ├── deployment.yaml
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── service.yaml
+│   ├── serviceaccount.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+ vagrant@k8s-node1 > ~ > helm package mypkg
+Successfully packaged chart and saved it to: /home/vagrant/mypkg-0.1.0.tgz
+```
+
+
 # Monitoring & Logging
 
 ## Prometheus Monitoring
