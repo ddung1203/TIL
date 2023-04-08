@@ -249,6 +249,8 @@ spec:
 
 ## EBS for CSI
 
+CSI Driver란, Container Storage Interface(CSI)는 Kubernetes, Mesos 같은 Container Orchestration System과 Storage를 제어하는 Plugin 사이의 Interface를 의미한다.
+
 - EBS 스냅샷
 - EBS 크기 변경
 
@@ -365,10 +367,27 @@ spec:
 
 ## CloudWatch Container Insight
 
+안정적인 서비스의 운영을 위해서는 서비스의 CPU, Memory 등을 모니터링하고 Application Log를 확인하는 것이 중요하다. 
+
+쿠버네티스에서도 마찬가지로 Cluster, Namespace, Service, Pod 등에 대한 모니터링과 필요에 따라 Application 로그 수집이 필요하다. 
+
+AWS에서 제공하는 Container Insights와 로그 수집기인 Fluent Bit로 로그를 수집하고 모니터링 할 수 있다.
+
+
+- Container Insights (모니터링)
+  - ECS, EKS Cluster에 대하여 CPU, Memory, 디스크, 네트워크 등 리소스에 대한 지표를 자동으로 수집
+  - CloudWatch agent로 수집된 지표를 사용하여 CloudWatch DashBoard 구성 가능
+- Fluent-bit (로깅)
+  - fluentd보다 Memory를 적게 사용하는 경량화된 로그 수집기, 전달자 역할 수행
+  - 수집된 지표를 Output Plugin을 통해 CloudWatch Logs, ElasticSearch, S3 등으로 전달 가능
+
 > https://docs.aws.amazon.com/ko_kr/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-EKS-quickstart.html
 > https://github.com/git-for-windows/git/releases/download/v2.36.1.windows.1/Git-2.36.1-64-bit.exe
 
-```
+
+### CloudWatch Container 로그 수집하기
+
+``` bash
 ClusterName=myeks-custom
 RegionName=ap-northeast-2
 FluentBitHttpPort='2020'
@@ -378,9 +397,39 @@ FluentBitReadFromHead='Off'
 curl https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-container-insights/latest/k8s-deployment-manifest-templates/deployment-mode/daemonset/container-insights-monitoring/quickstart/cwagent-fluent-bit-quickstart.yaml | sed 's/{{cluster_name}}/'${ClusterName}'/;s/{{region_name}}/'${RegionName}'/;s/{{http_server_toggle}}/"'${FluentBitHttpServer}'"/;s/{{http_server_port}}/"'${FluentBitHttpPort}'"/;s/{{read_from_head}}/"'${FluentBitReadFromHead}'"/;s/{{read_from_tail}}/"'${FluentBitReadFromTail}'"/' | kubectl apply -f - 
 ```
 
+``` bash
+kubectl get po -A
+NAMESPACE           NAME                                            READY   STATUS             RESTARTS   AGE
+amazon-cloudwatch   cloudwatch-agent-4z2cf                          1/1     Running            0          117s
+amazon-cloudwatch   cloudwatch-agent-77sh4                          1/1     Running            0          117s
+amazon-cloudwatch   cloudwatch-agent-rp6gj                          1/1     Running            0          117s
+amazon-cloudwatch   fluent-bit-dzvch                                1/1     Running            0          116s
+amazon-cloudwatch   fluent-bit-s8ls5                                1/1     Running            0          116s
+amazon-cloudwatch   fluent-bit-xlm2f                                1/1     Running            0          116s
+```
+상기와 같이 amazon-cloudwatch라는 네임스페이스가 있고 cloudwatch-agent와 fluent-bit가 있다.
+
+fluent-bit가 로그를 수집하고 그 로그를 cloudwatch-agent가 cloudwatch로 전송시킨다.
+
+CloudWatch의 Container Insights 내에서 확인 가능하다.
+
+
 ## Fargate
 
-EC2 인스턴스 사용 , 파드를 실행
+AWS Fargate는 서버리스형 컨테이너 서비스로서 Amazon EKS 클러스터의 일부로, Kubernetes 파드로 실행되는 컨테이너에 대해 적절한 크기의 온디맨드 컴퓨팅 용량을 제공한다.
+
+컨테이너를 실행하는 리소스 비용만 초단위에 따라 지불하면 된다.
+
+Fargate를 이용해 EC2 인스턴스를 사용하지 않고 파드를 실행할 수 있다.
+우리가 EKS를 사용할 때 컨트롤 플레인은 AWS에서 관리해주지만, 워커 노드들은 오토 스케일링 그룹을 이용해 EC2 인스턴스를 배포해서 사용한다.
+
+→ 즉, EC2 인스턴스의 관리는 사용자의 몫이다.
+
+Fargate는 EC2 인스턴스를 추상화시켰기 때문에 사용자가 관리할 필요가 없다. 사용자는 운영체제 버전 업데이트, 패치 등을 할 필요없이 오로지 파드만을 관리하면 된다.
+
+> Fargate 사용 시 상기 LoadBalancer 부분을 참고하여 작성한다.
+
+<br>
 
 > https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/fargate.html
 
@@ -434,6 +483,9 @@ spec:
     targetPort: 8080
   type: LoadBalancer
 ```
+
+Fargate는 EC2 인스턴스 관리 콘솔에서 확인할 수 없다.
+
 
 ## VPA
 
