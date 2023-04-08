@@ -24,14 +24,15 @@ kind: ClusterConfig
 metadata:
   name: myeks-custom
   region: ap-northeast-2
-  version: "1.22"
+  version: "1.24"
 
 # AZ
 availabilityZones: ["ap-northeast-2a", "ap-northeast-2b",  "ap-northeast-2c"]
 
 # IAM OIDC & Service Account
+# EKS와 AWS IAM 계정 연동
 iam:
-  withOIDC: true
+  withOIDC: true # EKS 입장에서 AWS IAM은 외부 서버
   serviceAccounts:
     - metadata:
         name: aws-load-balancer-controller
@@ -39,30 +40,30 @@ iam:
       wellKnownPolicies:
         awsLoadBalancerController: true
     - metadata:
-        name: ebs-csi-controller-sa
+        name: ebs-csi-controller-sa # SA 계정의 이름
         namespace: kube-system
-      wellKnownPolicies:
+      wellKnownPolicies: # 해당 기능을 켜면 계정에 해당되는 정책 자동 부여
         ebsCSIController: true
     - metadata:
-        name: cluster-autoscaler
+        name: cluster-autoscaler # SA 계정의 이름
         namespace: kube-system
       wellKnownPolicies:
         autoScaler: true
 
 # Managed Node Groups
-managedNodeGroups:
+managedNodeGroups: # 워커 노드의 그룹
   # On-Demand Instance
   - name: myeks-ng1
     instanceType: t3.medium
     minSize: 2
     desiredCapacity: 3
     maxSize: 4
-    privateNetworking: true
+    privateNetworking: true # private network에 배치하기 위함함
     ssh:
       allow: true
       publicKeyPath: ./keypair/myeks.pub
     availabilityZones: ["ap-northeast-2a", "ap-northeast-2b", "ap-northeast-2c"]
-    iam:
+    iam: # 3가지 정책을 node에도 부여
       withAddonPolicies:
         autoScaler: true
         albIngress: true
@@ -70,6 +71,7 @@ managedNodeGroups:
         ebs: true
 
 # Fargate Profiles
+# EC2 인스턴스를 사용하지 않는 형태
 fargateProfiles:
   - name: fg-1
     selectors:
@@ -79,9 +81,10 @@ fargateProfiles:
         
         
 # CloudWatch Logging
-cloudWatch:
+# 컨트롤 플레인이 숨겨져 있어 직접 관리하지 못함
+cloudWatch: # 컨트롤 플레인의 구성 요소들은 로그를 수집하지 못함
   clusterLogging:
-    enableTypes: ["*"]
+    enableTypes: ["*"] # 컨트롤 플레인에서 수집할 수 있는 모든 것을 수집
 ```
 
 ``` bash
@@ -93,7 +96,23 @@ ssh-keygen -f keypair/myssh
 eksctl create cluster -f myeks.yaml
 ```
 
+## EKS LoadBalancer
+
+| 기능 | Application LoadBalancer | Network LoadBalancer | Classic LoadBalancer|
+|---|---|---|---|
+|유형|계층7|계층4|계층4/7|
+|대상 유형|IP, 인스턴스, Lambda|IP, 인스턴스, ALB|-|
+|흐름/프록시 동작 종료|예|예|예|
+|프로토콜 리스너|HTTP, HTTPS, gRPC|TCP, UDP, TLS|TCP, SSL/TLS, HTTP, HTTPS|
+|다음을 통해 연결 가능|VIP|VIP|-|
+
 ## NLB for LoadBalancer Service
+
+EKS에서 LoadBalancer를 생성하면 기본적으로 Classic LoadBalancer가 생성된다.
+
+EC2 인스턴스를 사용하는 경우 Classic LoadBalancer는 정상 작동하지만 Fargate를 사용하는 경우에는 Classic LoadBalancer가 작동하지 않는다.
+
+Classic LoadBalancer는 반드시 EC2 인스턴스에만 연결이 될 수 있는데 Fargate 같은 경우에는 EC2 인스턴스가 생성되지 않기 때문이다.
 
 > https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/network-load-balancing.html
 > https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/alb-ingress.html
@@ -150,6 +169,39 @@ spec:
       targetPort: 8080
 ```
 
+**EC2 인스턴스에 NLB 설정**
+
+``` yaml
+service.beta.kubernetes.io/aws-load-balancer-type: "external"
+service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
+```
+
+로드밸런서를 만들 때 annotation을 붙여야한다.
+
+external은 외부용이라는 의미이며, nlb-target-type은 NLB가 생성되고 NLB의 타겟이되는 대상은 인스턴스라는 의미이다.
+
+정확히는 EC2 인스턴스의 NodePort가 타겟이 된다. 로드밸런서 서비스는 NodePort를 사용한다.
+
+그리고 EC2 인스턴스 내부에 파드가 존재하며 파드 안에는 App이 실행되고 있다.
+
+즉, NLB를 통해 파드 내의 App에 부하 분산한다.
+
+
+**Fargate에 NLB 설정**
+``` yaml
+service.beta.kubernetes.io/aws-load-balancer-type: "external"
+service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+```
+
+상기는 Fargate를 위한 aws-load-balancer-nlb-target-type이다.  
+
+IP 타입은 파드에 NLB가 직접적으로 연결되는 방식이다.
+즉, Fargate에 사용하기 위해 만들어 놓은 것이다.
+
+인스턴스가 private network에 배치되었으므로 퍼블릭 IP를 가지지 않으며 private 서브넷에 배치되어 있다. 
+
+하기와 같이 정리가 가능하다.
+
 - service.beta.kubernetes.io/aws-load-balancer-nlb-target-type
   - instance: EC2 타겟
   - ip: Pod 타겟(Fargate)
@@ -158,6 +210,11 @@ spec:
   - internet-facing: 외부
 
 ## Ingress for ALB
+
+L7에서 애플리케이션 트래픽을 로드 밸런싱하려면 Kubernetes ingress를 배포해야한다. 이는 AWS Application Load Balancer를 프로비저닝한다. 
+
+Ingress도 마찬가지로 AWS LoadBalancer Controll이 설치되어 있어야 한다.
+
 
 > https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/alb-ingress.html
 
