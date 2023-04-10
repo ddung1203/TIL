@@ -6,7 +6,7 @@
 
 임시로 사용할 빈 볼륨, 파드 삭제 시 볼륨 같이 삭제
 
-Pod가 실행되는 노드의 디스크 공간에 마운트 된다.
+Pod가 실행되는 노드의 디스크 공간에 마운트 된다. Pod의 컨테이너 간에 볼륨을 공유하기 위해 사용된다.
 
 ``` yaml
 apiVersion: v1
@@ -42,6 +42,8 @@ kubectl exec -it myweb-pod -c myweb2 -- sh
 
 > ls /empty
 ```
+
+emptyDir은 한 컨테이너가 파일을 관리하고 한 컨테이너가 그 파일을 사용하는 경우에 유용하게 사용할 수 있다. GitHub 코드를 받아와 애플리케이션 컨테이너에 공유해주는 Side-Car 컨테이너가 될 수 있고, 설정 파일을 동적으로 갱신하는 컨테이너를 Pod에 포함시킬 수도 있다.
 
 ## initContainer(초기화 컨테이너)
 
@@ -82,7 +84,7 @@ spec:
 
 ## hostPath
 
-hostPath는 노드의 파일시스템의 특정 파일이나 디렉토리를 Pod에 마운트하여 사용한다.
+hostPath는 노드의 파일시스템의 특정 파일이나 디렉토리를 Pod에 마운트하여 사용한다. 호스트와 볼륨을 공유하기 위해 사용된다.
 
 `/mnt/web_contents/index.html`
 
@@ -96,6 +98,31 @@ hostPath는 노드의 파일시스템의 특정 파일이나 디렉토리를 Pod
 > - hostPath
 > - gitRepo
 > - local
+
+``` yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-pod
+  labels:
+    name: hostpath-pod
+spec:
+  containers:
+  - name: hostpath-pod
+    image: busypox
+    args: ["tail", "-f", "/dev/null"]
+    volumeMounts:
+    - name: my-hostpath-volume
+      mountPath: /etc/data
+  volumes:
+  - name: my-hostpath-volume
+    hostPath:
+      path: /tmp
+```
+
+Pod를 생성한 뒤 Pod의 컨테이너 내부로 들어가 `/etc/data` 디렉토리에 파일을 생성하면 호스트의 `/tmp` 디렉토리에 파일이 저장된다.
+하지만, Deployment의 Pod에 장애가 생겨 다른 노드로 Pod가 옮겨갔을 경우, 이전 노드에 저장된 데이터를 사용할 수 없다.
+
 
 ## PV & PVC
 
@@ -329,6 +356,70 @@ spec:
   selector:
     app: web
 ```
+
+### EBS를 PV으로 사용
+
+
+``` bash
+export VOLUME_ID=$(aws ec2 create-volume --size 5 \
+--region ap-northeast-2 \
+--availability-zone ap-northeast-2a \
+--volume-type gp2 \
+--tag-specifications \
+'ResourceType=volume, Tags=[{Key=KubernetesCluster, Value=mycluster.k8s.local}]' \
+| jq '.VolumeId' -r)
+```
+
+`PV`
+``` yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ebs-pv
+spec:
+  capacity:
+    storage: 5Gi         # 이 볼륨의 크기는 5G
+  accessModes:
+    - ReadWriteOnce    # 하나의 포드 (또는 인스턴스) 에 의해서만 마운트
+  awsElasticBlockStore:
+    fsType: ext4
+    volumeID: <VOLUME_ID>
+  persistentVolumeReclaimPolicy: Delete # 연결된 PVC를 삭제함으로써 PV 삭제
+```
+
+`PVC, Pod`
+``` yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-ebs-pvc                  # 1. my-ebs-pvc라는 이름의 pvc 를 생성
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce       # 2.1 속성이 ReadWriteOnce인 퍼시스턴트 볼륨과 연결
+  resources:
+    requests:
+      storage: 5Gi          # 2.2 볼륨 크기가 최소 5Gi인 퍼시스턴트 볼륨과 연결
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ebs-mount-container
+spec:
+  containers:
+    - name: ebs-mount-container
+      image: busybox
+      args: [ "tail", "-f", "/dev/null" ]
+      volumeMounts:
+      - name: ebs-volume
+        mountPath: /mnt
+  volumes:
+  - name : ebs-volume
+    persistentVolumeClaim:
+      claimName: my-ebs-pvc    # 3. my-ebs-pvc라는 이름의 pvc를 사용
+```
+
+이전에 생성한 NFS는 1:N 마운트가 가능하지만, AWS의 EBS는 1:1 마운트만 가능하다. 또한 EBS는 생성 당시에 설정했던 크기만큼만 데이터를 저장할 수 있다. 
 
 ## 동적 프로비저닝
 
