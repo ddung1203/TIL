@@ -415,6 +415,7 @@ TLS/SSL Termination 방식은 Loadbalancer가 존재하며 노출되어 있다.
 - 개별 서버들이 암/복호화를 하지 않아 리소스 사용량이 낮아짐
 - 여러 보안 장치를 비암호화 구간에 구성할 수 있음
 
+Ingress의 장점 중 하나는 Kubernetes 뒤쪽에 있는 Deployment와 Service가 아닌, 앞쪽에 있는 Ingress Controller에서 편하게 SSL/TLS 보안 연결을 설정할 수 있다는 것이다. 즉, Ingress Controller 지점에서 인증서를 적용해 두면 요청이 전달되는 애플리케이션에 대해 모두 인증서 처리를 할 수 있다. 따라서 Ingress Controller가 보안 연결을 수립하기 위한 일종의 Gateway 역할을 한다고도 볼 수 있다.
 
 
 `ingress-tls-secret.yaml`

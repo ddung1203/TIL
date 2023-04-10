@@ -237,7 +237,7 @@ Pod - DNS -> coredns SVC(kube0-system NS) -> coredns POD
 
 외부 브라우저에서도 접근할 수 있도록 NodePort라는 개념이 등장한다.
 
-NodePOrt는 노드에 노출되어 외부에서도 접근이 가능한 서비스이다.
+NodePort는 노드에 노출되어 외부에서도 접근이 가능한 서비스이다.
 
 다만 노드의 IP가 변경된 경우 처리를 해줘야하기 때문에 실 서비스에서도 NodePort만으로 외부 클라이언트를 노출하는 방식은 권장되지 않는다.
 
@@ -340,6 +340,15 @@ Ingress는 도메인 이름, 도메인 Path에 따라 내부에 있는 ClusterIP
 
 Ingress 하나만 만들어도 여러개의 LB를 만들어 자원을 낭비하는 것을 방지할 수 있다.
 
+인그레스 트래픽은 외부에서 서버로 유입되는 트래픽을 의미하며, 인그레서 네트워크는 인그레스 트래픽을 처리하기 위한 네트워크를 의미한다.
+
+기본 기능
+
+- 외부 요청의 라우팅: `/apple`, `/apple/red` 등과 같이 특정 경로로 들어온 요청을 어떠한 서비스로 전달할지 정의하는 라우팅 규칙을 설정할 수 있다. 
+- 가상 호스트 기반의 요청 처리: 같은 IP에 대해 다른 도메인 이름으로 요청이 도착했을 때, 어떻게 처리할 것인지 정의할 수 있다. 
+- SSL/TLS 보안 연결 처리: 여러 개의 서비스로 요청을 라우팅할 때, 보안 연결을 위한 인증서를 쉽게 적용할 수 있다. 
+
+
 L7 LB = ALB
 
 ``` yaml
@@ -364,7 +373,7 @@ spec:
 방법 1.
 
 ``` bash
-curl --resolve www.jeonj.xyz:80:192.168.100.100 http://www.jeonj.xyz
+curl --resolve www.jeonj.xyz:80:192.168.100.100 http://www.jeonj.xyz/one
 ```
 
 방법 2.
@@ -450,7 +459,7 @@ spec:
     spec:
       containers:
         - name: hello-one
-          image: c1t1d0s7/hello:one
+          image: ddung1203/hello:one
           ports:
             - containerPort: 80
               protocol: TCP
@@ -474,11 +483,13 @@ spec:
     spec:
       containers:
         - name: hello-two
-          image: c1t1d0s7/hello:two
+          image: ddung1203/hello:two
           ports:
             - containerPort: 80
               protocol: TCP
 ```
+
+당연히 `NodePort`가 아닌 `ClusterIP` 또한 가능하다.
 
 `one-svc-np.yaml`
 ``` yaml
@@ -539,9 +550,74 @@ spec:
                   number: 80
 ```
 
+상기의 `nginx.ingress.kubernetes.io/rewrite-target` 주석은 Ingress에 정의된 경로로 들어오는 요청을 rewrite-target에 설정된 경로로 전달한다. 예를 들어, Ingress Controller로 `/one`으로 접근하면 hostname-service에는 `/` 경로로 전달된다.
+
+rewrite-target은 `/one`이라는 경로로 시작하는 모든 요청을 hostname-service의 `/`로 전달한다. 예를 들어 `/one/aaa/bbb`라는 경로로 요청을 보내도 똑같이 `/`로 전달된다. 
+
+``` yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-ing
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2 # path의 (.*)에서 획득한 경로로 전달
+spec:
+  rules:
+    - host: '*.nip.io'
+      http:
+        paths:
+          - path: /one(/|$)(.*) # (.*)을 통해 경로를 획득
+            pathType: Prefix
+            backend:
+              service:
+                name: one-svc
+                port:
+                  number: 80
+          - path: /two(/|$)(.*) # (.*)을 통해 경로를 획득
+            pathType: Prefix
+            backend:
+              service:
+                name: two-svc
+                port:
+                  number: 80
+```
+
+상기와 같이, path 항목에서 `(.*)`의 Nginx 정규 표현식을 통해 `/one` 뒤에 오는 경로를 얻은 뒤, 이 값을 rewrite-target에서 사용한다. 즉, `/one/`으로 접근하면 이전과 동일하게 `/`로 전달되지만, `/one/aaa`는 `/aaa`로, `/one/aaa/bbb`는 `/aaa/bbb`로 전달된다. 요청 경로를 rewrite하는 것이라 이해하면 쉽다.
+
 ``` bash
 kubectl create -f .
+
+curl http://192-168-100-100.nip.io/one
+curl http://192-168-100-100.nip.io/two
 ```
+
+``` bash
+ vagrant@k8s-node1 > ~/ingress > kubectl get ingress
+NAME        CLASS    HOSTS      ADDRESS   PORTS   AGE
+hello-ing   <none>   *.nip.io             80      7s
+```
+Ingress는 단지 요청을 처리하는 규칙을 정의하는 선언적인 오브젝트일 뿐, 외부 요청을 받아들일 수 있는 실제 서버가 아니다. Ingress는 Ingress Controller라고 하는 특수한 서버에 적용해야만 그 규칙을 사용할 수 있다.
+
+즉, 실제로 외부 요청을 받아들이는 것은 Ingress 컨트롤러 서버이며, 이 서버가 Ingress 규칙을 로드해 사용한다.
+
+대표적으로는, `addons.md`에서 kubespray에 적용한 Nginx Ingress Controller가 있다.
+
+> Nginx Ingress Controller는 Kubernetes에서 공식적으로 개발되고 있다.
+> https://github.com/kubernetes/ingress-nginx
+
+요청이 실제로 `/one`, `/two`라는 서비스로 전달되는 것이 아닌, Nginx Ingress Controller에 의해 생성된 엔드포인트로 요청을 직접 전달한다. 이러한 동작을 서비스를 거치지 않고 Pod로 직접 요청이 전달되기 때문에 bypass라고 부른다. 
+
+``` bash
+ vagrant@k8s-node1 > ~/ingress > kubectl get endpoints            
+NAME                                          ENDPOINTS                                                               AGE
+k8s-sigs.io-nfs-subdir-external-provisioner   <none>                                                                  2d22h
+kubernetes                                    192.168.100.100:6443                                                    3d16h
+myweb-svc-lb                                  10.233.102.152:8080,10.233.102.153:8080,10.233.71.16:8080 + 3 more...   2d21h
+one-svc                                       10.233.102.160:80,10.233.71.27:80,10.233.75.25:80                       35s
+two-svc                                       10.233.102.161:80,10.233.71.28:80,10.233.75.24:80                       35s
+```
+
+
 
 ## Readiness Probe
 
