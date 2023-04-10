@@ -431,7 +431,7 @@ StorageClass는 PV를 만들기 위한 템플릿을 가지고 있다. PVC를 만
 
 ### StorageClass
 
-PVC를 정의하면 PVC의 내용에 따라서 Kubernetes 클러스터가 물리 Dick를 생성하고, 이에 연결된 PV를 생성한다.
+PVC를 정의하면 PVC의 내용에 따라서 Kubernetes 클러스터가 물리 Disk를 생성하고, 이에 연결된 PV를 생성한다.
 
 디스크를 생성할 때 필요한 디스크의 타입을 정의할 수 있는데, 이를 StorageClass라고 하고, PVC에서 StorageClass를 지정하면 이에 맞는 디스크를 생성하도록 한다.
 
@@ -451,6 +451,20 @@ volumeBindingMode: Immediate
 ```
 
 각 StorageClass에는 해당 StorageClass에 속하는 PV를 동적으로 프로비저닝할 때 사용되는 provisioner, parameters와 reclaimPolicy 필드가 포함된다.
+
+``` yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-sc
+spec:
+  storageClassName: standard # storageClassName 항목을 정의하지 않았을 떄, k8s에서 기본 sc가 있다면 기본 sc로 수행
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
 
 
 ### NFS Dynamic Provisioner 구성
