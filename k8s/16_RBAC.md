@@ -1,5 +1,18 @@
 # RBAC : Role Based Access Control
 
+RBAC를 기반으로 하는 Service Account는 사용자 또는 애플리케이션 하나에 해당하며, RBAC라는 기능을 통해 특정 명령을 실행할 수 있는 권한을 Service Account에 부여한다. 권한을 부여받은 Service Account는 해당 권한에 해당하는 기능만 사용할 수 있다.
+
+간단히 생각해서 Linux의 root와 일반 user를 나누는 기능을 K8s에서도 유사하게 사용할 수 있다고 생각하면 된다. 지금까지의 `kubectl` 명령어를 사용해와던 권한은 root에 해당하는 권한을 가지고 있다. 
+
+
+우리가 `kubectl` 명령을 사용 시 하기와 같은 절차가 실행된다.
+
+```
+사용자 -> `kubectl` -> HTTP 핸들러 -> Authentication -> Authorization -> Mutating Admission Controller -> Validating Admission Controller -> etcd
+```
+
+지금까지 인증을 위한 계정 같은 것을 k8s에서 생성한 적도 없고, 계정에 권한을 부여한 적도 없다. 사실 이는 설치 도구를 이용해 k8s를 설치할 때 설치 도구가 자동으로 `kubectl`이 관리자 권한을 갖도록 설정해 두기 때문인데, 이는 하기의 `~/.kube/config`에서 확인이 가능하다.
+
 ## Kubeconfig
 
 `~/.kube/config`: Kubernetes 설정 파일
@@ -34,7 +47,9 @@ contexts:
 current-context: kubernetes-admin@cluster.local
 ```
 
-상기 파일은 `kubectl` 명령어가 api-server에 접근할 때 사용할 인증 정보를 가지고 있다. 
+상기 파일은 `kubectl` 명령어가 api-server에 접근할 때 사용할 인증 정보를 가지고 있다. 상기 파일에 저장된 설정을 읽어 k8s 클러스터를 제어한다.
+
+또한 상기의 `client-certificate-data`와 `client-key-data`에 설정된 데이터는 k8s에서 최고 권한을 갖는다.
 
 - cluster.local : 설정하지 않아도 기본적으로 구성되는 클러스터 이름
 - client-authority-data : kubectl이 어떤 서버에 요청할 것인지에 대한 정보와 CA 인증서를 base64로 인코딩한 것
@@ -366,3 +381,50 @@ roleRef:
   name: leader-locking-nfs-client-provisioner
   apiGroup: rbac.authorization.k8s.io
 ```
+
+## Kubernetes API Server 접근
+
+### Service Account의 Secret을 이용해 Kubernetes API 서버에 접근
+
+Kubeadm의 경우 Kubernetes의 마스터 IP와 6443 포트로 접근한다면 API 서버에 연결할 수 있다. 만약 `curl https://localhost:6553 -k`를 통해 접근 시 인증을 따로 하지 않았기 때문에 401 메시지가 나온다.
+
+따라서, 하기의 script로 API 요청을 보내면 정상 응답이 잔환되는 것을 확인할 수 있다.
+
+``` bash
+export decoded_token=$(kubectl get secret jeonj-token-nrzgb -o jsonpath='{.data.token}" | base64 -d)
+
+curl https://localhost:6443/apis --header "Authorization: Bearer $decoded_token" -k
+```
+
+`kubectl`에서 사용할 수 있는 기능은 모두 REST API에서도 동일하게 사용할 수 있다.
+
+예를 들어 `/api/v1/namespaces/default/services` 경로로 요청을 보내면 default 네임스페이스에 존재하는 서비스의 목록을 가져올 수 있다. 상기 script는 `kubectl get services -n default`와 동일한 기능을 한다.
+
+``` bash
+curl https://localhost:6443/api/v1/namespaces/default/services \
+-k --header "Authorization: Bearer $decoded_token"
+```
+
+만약 Pod 내부에서 API 서버에 접근하기 위해 Secret의 데이터를 Pod 내부로 가져올 필요는 없다. 지금까지 생성해 왔던 Deployment나 Pod도 모두 Service Account의 Secret을 자동으로 내부에 마운트하고 있었다. Pod를 생성하기 위한 yaml `spec`에 아무런 설정을 하지 않으면 자동으로 default Service Account의 Secret을 Pod 내부에 마운트한다.
+
+또한 API 서버에 접근하기 위해서 HTTP 요청으로 REST API를 사용해도 되지만, Pod 내부에서 실행되는 애플리케이션이라면 Kubernetes SDK를 활용하는 방식을 사용하도록 한다.
+
+
+[Client Libraries](https://kubernetes.io/docs/reference/using-api/client-libraries/)
+
+## Service Account에 Image Registry 접근을 위한 Secret 설정
+
+Service Account를 이용하면 private registry 접근을 위한 Secret을 Service Account 자체에 설정할 수 있다. 즉, Deployment나 Pod의 yaml 파일마다 docker registry 타입의 secret을 정의하지 않아도 된다. 
+
+``` yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reg-auth-jeonj
+  namespace: default
+imagePullSecrets:
+- name: registry-auth
+```
+
+앞으로 Pod를 생성하는 yaml 파일에서 serviceAccountName 항목에 reg-auth-jeonj Service Account를 지정해 생성하면 자동으로 imagePullSecrets 항목이 Pod `spec`에 추가된다. 
+
