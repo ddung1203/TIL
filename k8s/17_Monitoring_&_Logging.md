@@ -36,6 +36,29 @@ Successfully packaged chart and saved it to: /home/vagrant/mypkg-0.1.0.tgz
 
 # Monitoring & Logging
 
+Prometheus는 성능, 사용성 및 다른 도구와의 호환성 등 여러 측면에서 우수하다고 평가되는 시계열 데이터베이스이다. 
+
+그리고 DB에 수집된 데이터를 Grafana를 통해 시각화하거나, AlertManager를 통해 Slack 알람을 보내는 등 확장해 사용할 수 있다.
+
+CAdvisor 같은 모니터링 에이전트 도구는 `/metrics` 경로를 외부에 노출시켜 제공한다. 이처럼 `/metrics` 경로를 외부에 노출시켜 데이터를 수집할 수 있도록 인터페이스를 제공하는 서비스를 일반적으로 exporter라고 부른다.
+
+**exporter**
+
+- 애플리케이션 내부의 데이터를 Prometheus로 수집하고 싶다면
+  - Python, Golang 등에서 제공하는 exporter 라이브러리를 통해 커스텀 exporter 제작
+- 필요에 맞는 적절한 오픈소스 exporter를 사용할 수 있으며, CAdvisor는 그러한 오픈소스 중 하나이다.
+
+### 모니터링 메트릭의 분류
+
+- 인프라 수준의 메트릭
+  - 호스트에서 사용 중인 파일 디스크립터의 개수, 호스트에 마운트돼 있는 디스크 사용량, 호스트 NIC의 패킷 전송량 등
+  - node-exporter 도구가 제공하는 메트릭
+- 컨테이너 수준의 메트릭
+  - 컨테이너별 CPU와 메모리 사용량, 컨테이너 프로세스의 상태, 컨테이너에 할당된 리소스 할당량, Kubernetes Pod의 상태 등
+  - CAdvisor가 제공하는 메트릭
+- 애플리케이션 수준의 메트릭
+  - 마이크로서비스에서 발생하는 트레이싱 데이터, 애플리케이션 로직에 종속적인 데이터, 서버 프레임워크에서 제공하는 모니터링 데이터
+
 ## Prometheus Monitoring
 
 CPU, Memory, Network IO, Disk IO
