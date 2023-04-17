@@ -124,7 +124,7 @@ sudo kubeadm reset
 ```
 
 ``` bash
-sudo kubeadm init --control-plane-endpoint 192.168.100.100 --pod-network-cidr 172.16.0.0/16 --apiserver-advertise-address 192.168.100.100
+sudo kubeadm init --control-plane-endpoint 192.168.56.100 --pod-network-cidr 172.16.0.0/16 --apiserver-advertise-address 192.168.56.100
 ```
 
 ``` bash
@@ -137,7 +137,7 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 kubectl get nodes
 
 NAME     STATUS     ROLES                  AGE   VERSION
-docker   **NotReady**   control-plane,master   14m   v1.22.8
+kubeadm-node1   **NotReady**   control-plane,master   14m   v1.22.8
 ```
 
 NotReady가 나오는 이유는 아직 CNI 설치를 하지 않았기 때문이다.
@@ -190,7 +190,7 @@ tigera-operator    tigera-operator-7cf4df8fc7-kx87z           ...
 kubectl get nodes
 
 NAME     STATUS   ROLES                  AGE   VERSION
-docker   **Ready**    control-plane,master   30m   v1.22.8
+kubeadm-node1   **Ready**    control-plane,master   30m   v1.22.8
 ```
 
 ``` bash
