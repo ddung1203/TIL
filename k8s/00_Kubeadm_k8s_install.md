@@ -194,7 +194,7 @@ docker   **Ready**    control-plane,master   30m   v1.22.8
 ```
 
 ``` bash
-kubectl taint nodes --all node-role.kubernetes.io/master-
+kubectl taint node docker node-role.kubernetes.io/master-
 ```
 
 ## Worker Node 추가
@@ -347,4 +347,10 @@ vagrant@kubeadm-node2:~$ sudo kubeadm join --token zyr0ab.1t7vvmfslwldv5x2 192.1
         [WARNING SystemVerification]: this Docker version is not on the list of validated versions: 23.0.3. Latest validated version: 20.10
 error execution phase preflight: couldn't validate the identity of the API Server: Get "https://192.168.56.100:6443/api/v1/namespaces/kube-public/configmaps/cluster-info?timeout=10s": x509: certificate is valid for 10.96.0.1, 10.0.2.15, not 192.168.56.100
 To see the stack trace of this error execute with --v=5 or higher
+```
+
+Docker 20.10 다운그레이드
+
+``` bash
+sudo apt-get install docker-ce=5:20.10.8~3-0~ubuntu-focal docker-ce-cli=5:20.10.8~3-0~ubuntu-focal containerd.io
 ```
