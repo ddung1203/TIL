@@ -146,3 +146,85 @@ Docker는 Container라는 가상의 격리 환경을 만들기 위해 리눅스�
   - Device
   - I/O
 
+## CRI-O
+
+### Container Runtime Tool을 CRI-O로 사용
+
+``` bash
+sudo yum update
+```
+
+`/etc/modules-load-d` 경로에 `.conf` 파일명으로 모듈 정보를 등록하면 부팅 시 자동으로 로드
+Kubernetes에서container runtime tool로 CRI-O를 사용하기 위한 사전 작업으로 overlay와 br_netfilter 커널 모듈을 로딩해줘야 함
+``` bash
+# .conf 파일 생성
+cat <<EOF | sudo tee /etc/modules-load.d/crio.conf
+overlay
+br_netfilter
+EOF
+
+# 커널 모듈 등록
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# 재기동이 커널모듈이 유지되도록 설정
+cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.ipv4.ip_forward                 = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+
+sudo sysctl --system
+```
+
+### CRI-O 설치
+
+``` bash
+export VERSION=1.26
+export OS=CentOS_7
+
+sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/devel:kubic:libcontainers:stable.repo
+
+sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.repo https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/devel:kubic:libcontainers:stable:cri-o:$VERSION.repo
+```
+
+``` bash
+sudo yum install cri-o
+
+sudo systemctl daemon-reload
+sudo systemctl enable crio --now
+
+systemctl status cri-o
+```
+
+## CRI-O와 함께 사용되는 Tool
+
+CRI-O의 경우 오로지 container를 실행하는 역할을 담당한다. 따라서 container 실행 이외의 기능인 image build, clik image registry 생승 등과 같은 부가적인 기능은 수행하지 못한다.
+
+### Podman
+
+Podman 이외에도 Buildah, Skopeo가 있다. 
+
+``` bash
+curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo  https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/CentOS_7/devel:kubic:libcontainers:stable.repo
+
+sudo yum install podman
+```
+
+``` bash
+sudo podman version
+
+sudo podman pull docker.io/ddung1203/realmytrip:latest
+
+sudo podman images
+
+sudo podman run -d -p 3000:3000 --security-opt seccomp=unconfined docker.io/ddung1203/realmytrip:latest
+
+sudo podman ps
+```
+
+> Error: container_linux.go:380: starting container process caused: error adding seccomp filter rule for syscall bdflush: requested action matches default action of filter: OCI runtime error
+> 이 오류는 seccomp (secure computing) 필터 규칙 설정과 관련된 문제로, 컨테이너 프로세스를 시작할 때 발생한다.
+>
+> 해결 방법으로는, --security-opt 플래그를 사용하여 seccomp 옵션을 변경할 수 있다.
+
