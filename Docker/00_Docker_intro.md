@@ -30,6 +30,16 @@ Docker EE : Enterprise Edition
 
 0.X -> 1.X(1.13.X) -> 17.04 -> 20.10
 
+## containerd & CRI-O
+
+초기 Docker를 개발하면서 하나의 완성된 컨테이너 사용자경험을 만드느 것에 집중하다보니 Docker Engine이라는 하나의 패키지에 API, CLI, 네트워크, 스토리지 등 여러 기능들을 모두 담게 되었고, Docker에 의존하고 있던 Kubernetes에서는 Docker 버전이 새로 나올때마다 Kubernetes가 크게 영향을 받는 일들이 생겼다.
+
+그래서 Docker를 중심으로 구글 등 컨테이너 기술에 관심있는 여러 집단들이 한데모여 Open Container Initiative(OCI) 프로젝트를 시작하여 컨테이너에 관한 표준을 정하는 일들을 시작한다. 그래서 Docker에서는 OCI 표준을 준수하는 containerd라는 Container Runtime을 만들고, Kubernetes에서는 OCI 표준을 준수하는 이미지들을 실행할 수 있는 Container Runtime Interface(CRI) 스펙을 v1.5 부터 제공함으로써 Docker 버전과 무관하게 OCI 표준을 준수하기만 하면 어떤 컨테이너 이미지도 Kubernetes에서 실행가능한 환경이 만들어지게 되었다.
+
+한편 Red Hat, Intel, SUSE, Hyper, IBM에서도 OCI 표준에 따라 Kubernetes 전용 Container Runtime을 만들었는데 이것이 CRI-O이다.
+
+containerd와 CRI-O 모두 현재 가장 널리 사용되고 있으며 containerd는 Docker Engine에 기본으로 탑재되어 있어서 지금도 Docker를 사용한다면 내부적으로 사용되는 Container Runtime은 containerd 를 사용하게 된다. 참고로 `docker build` 커맨드로 생성되는 이미지들 역시 OCI Image Spec을 준수하기 때문에 별도의 작업없이 containerd로 실행시킬 수 있다.
+
 ## Docker Engine 설치
 
 > https://docs.docker.com/engine/install/ubuntu/
