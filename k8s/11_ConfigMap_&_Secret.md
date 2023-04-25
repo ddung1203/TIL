@@ -502,3 +502,70 @@ spec:
 ``` bash
 curl -k https://192-168-100-100.nip.io
 ```
+
+## Private Registry에서 Image 받아오기
+
+Kubernetes에 Private Docker Registry에 접속하여 이미지 Pull할 수 있도록 Secret 설정
+
+### Dockerconfig 생성
+
+docker login을 하여 로그인 정보인 config.json을 생성한다.
+
+``` json
+{
+  "auths": {
+          "https://index.docker.io/v1/": {
+                  "auth": ""
+          }
+  }
+}
+```
+
+Docker 인증을 기반으로 Kubernetes Secret 생성
+
+``` bash
+kubectl create secret generic regcred \ 
+    --from-file=.dockerconfigjson=~/.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson
+```
+
+검증
+
+``` bash
+kubectl get secret regcred --output=yaml
+```
+
+결과는 다음과 같다.
+
+``` yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  ...
+  name: regcred
+  ...
+data:
+  .dockerconfigjson: eyJodHRwczovL2luZGV4L ... J0QUl6RTIifX0=
+type: kubernetes.io/dockerconfigjson
+```
+
+`.dockerconfigjson` 필드의 값은 base64 인코딩의 결과이며, decode 시 `config.json`을 확인할 수 있다.
+
+### Secret을 사용하는 Pod 생성
+
+``` yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: realmytrip
+  labels:
+    name: realmytrip
+spec:
+  containers:
+  - name: realmytrip
+    image: ddung1203/realmytrip:latest
+    ports:
+      - containerPort: 3000
+  imagePullSecrets:
+    - name: regcred
+```
