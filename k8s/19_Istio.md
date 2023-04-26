@@ -1,5 +1,8 @@
 # Istio
 
+> https://www.istioworkshop.io/
+> https://github.com/rafik8/istio-workshop-labs
+
 Istio는 Kubernetes 환경에서 서비스 메시를 관리하기 위한 오프소스 플랫폼이다. Envoy를 기반으로 하며, 서비스 간 트래픽 관리, 인증 및 권한 부여, 서비스 모니터링, 로깅 등 다양한 기능을 제공한다.
 
 1. 서비스 메시 구성
@@ -24,12 +27,45 @@ Istio는 Kubernetes 환경에서 서비스 메시를 확장하는 다양한 기�
 
 ## Install
 
-Helm을 이용하여 설치
+``` bash
+mkdir ~/istio && cd ~/istio
+```
+
+최신 버전 설정
+
+> https://github.com/istio/istio
 
 ``` bash
-helm repo add istio https://istio-release.storage.googleapis.com/charts
-helm repo update
-
-kubectl create namespace istio-system
-helm install istio-base istio/base -n istio-system
+export ISTIO_VERSION=1.17.2
 ```
+
+``` bash
+curl -L https://git.io/getLatestIstio | sh -
+```
+
+PATH에 istioctl 추가
+``` bash
+export PATH="$PATH:~/istio-$ISTIO_VERSION/bin"
+```
+
+``` bash
+ vagrant@k8s-node1  ~/istio  istioctl version --remote=false
+1.17.2
+```
+
+
+하기 설치의 경우 demo를 사용한다.
+``` bash
+ vagrant@k8s-node1  ~/istio  istioctl install --set profile=demo -y
+✔ Istio core installed                                                        
+✔ Istiod installed                                                            
+✔ Egress gateways installed                                                   
+✔ Ingress gateways installed                                                  
+✔ Installation complete                                                       
+```
+
+namespace label을 추가하여 Istio에 Envoy를 자동으로 삽입
+``` bash
+kubectl label namespace default istio-injection=enabled
+```
+
