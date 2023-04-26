@@ -1,7 +1,8 @@
 # Istio
 
 > https://www.istioworkshop.io/
-> https://github.com/rafik8/istio-workshop-labs
+> 
+> https://github.com/istio/istio
 
 Istio는 Kubernetes 환경에서 서비스 메시를 관리하기 위한 오프소스 플랫폼이다. Envoy를 기반으로 하며, 서비스 간 트래픽 관리, 인증 및 권한 부여, 서비스 모니터링, 로깅 등 다양한 기능을 제공한다.
 
@@ -128,4 +129,19 @@ while true;do curl http://192.168.100.100:30241/productpage; done
 
 ![Istio](./img/19_2.png)
 
-상기와 같이 Service Mesh를 확인할 수 있다. 
+상기와 같이 Service Mesh를 확인할 수 있다.
+
+## Jaeger
+
+### Tracing
+
+Tracing은 복잡한 MSA 서버 사이에서 insight를 제공한다. 뿐만 아니라, 서버 내부의 어느 함수에서 시간을 많이 소요하는지, 어느 경우에 레이턴시가 튀는지 등을 확인하기 위한 용도로 쓰인다.
+
+- HTTP, gRPC 등의 프로토콜을 사용ㅇ하는 서버 간의 요청 추적
+- 서버 내부 프로세싱의 추적
+
+### Tracing을 위한 솔루션과 Service Mesh
+
+트레이싱 데이터를 수집하려면 서버 간에 HTTP 헤더를 전파하거나, 서버로 들어오는 요청의 프로토콜 등을 aware할 수 있는 무언가가 필요하다. 때문에 이를 해결하기 위해 Istio와 같은 Service Mesh 솔루션을 활용한다.
+
+WIP
