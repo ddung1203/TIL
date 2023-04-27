@@ -3,6 +3,10 @@
 현재는 샘플 Bookinfo 예제와, 개요 수준으로 다루었지만 추후 프로젝트 시 참조 넣도록 하겠다.
 
 > https://www.istioworkshop.io/
+>
+> https://github.com/GoogleCloudPlatform/microservices-demo
+>
+> https://github.com/rafik8/istio-workshop-labs.git
 > 
 > https://github.com/istio/istio
 
@@ -214,3 +218,217 @@ while true;do curl http://192.168.100.100:30241/productpage; done
 ![Kiali](./img/19_10.png)
 
 상기와 같이 그래프는 Istio Telemetry를 사용하여 일정 기간 동안 Service Mesh를 통과하는 트래픽을 보여준다.
+
+## Hipster application
+
+Istio workshop 내의 Web demo 애플리케이션이다.
+
+> https://github.com/GoogleCloudPlatform/microservices-demo
+
+이 Application은 10개의 서로 다른 Micro Service로 구성되어 있어 시나리오에서 Istio 기능을 사용 및 테스트하고 Micro Service를 학습용으로 선택하였다.
+
+![Hipster](./img/19_11.png)
+
+``` bash
+kubectl create ns hipster-app
+
+# Kubernetes context를 생성된 NS로 설정
+# 혹은 kubens 사용
+kubectl config set-context --current --namespace=hipster-app
+```
+
+> kubectx 및 kubens install
+> sudo git clone https://github.com/ahmetb/kubectx /opt/kubectx
+> sudo ln -s /opt/kubectx/kubectx /usr/local/bin/kubectx
+> sudo ln -s /opt/kubectx/kubens /usr/local/bin/kubens
+
+``` bash
+# microservices-demo/release/kubernetes-manifests.yaml
+kubectl apply -f kubernetes-manifests.yaml
+
+kubectl get po,svc
+```
+
+**Istio에서 Service Mesh를 가능하게 하는 3가지 방법**
+
+- **자동 사이드카 삽입**
+
+Mutating Admission Webhook을 통한 자동 사이트가 삽입, namespace가 `istio-injection=enabled` 레이블이 지정되면 namespace에 배포된 모든 Pod는 `sidecar-injector` Pod에서 삽입한 카이드카를 가져온다.
+
+- **수동 사이드카 추가**
+
+deployment에 사이드카 추가
+
+``` bash
+istioctl kube-inject -f deployment.yaml
+```
+
+- **단일 Pod 삽입**
+
+특정 서비스에 대해서만 Mesh를 활성화하고, Istio와의 호환성 테스트를 시작하는 경우에 유용
+
+``` bash
+istioctl experimental add-to-mesh service [flags]
+```
+
+### Hipster Application에 Istio 활성화
+
+Envoy Proxy 삽입
+``` bash
+kubectl apply -f <(istioctl kube-inject -f hipster-app.yaml)
+```
+
+Application에 Istio를 활성화함으로써 Code를 수정하거나 컨테이너 이미지를 다시 빌드할 필요 없이 Grafana, Jaeger, Kiali를 통해 애플리케이션 모니터링 및 Tracing 기능을 사용할 수 있다.
+
+## Traffic Management
+
+Istio Gateway는 Envoy Proxy를 기반으로 하며, Service Mesh 네트워크에서 실행되며 서비스에 대한 역방향 프록시 및 로드 밸런싱을 처리한다.
+
+![Hipster](./img/19_12.png)
+
+### Istio Gateway vs. Kubernetes Gateway
+
+Kubernetes Ingress와 달리 Istio Ingress는 트래픽 라우팅 구성이 포함되어 있지 않다. 수신 트래픽에 대한 트래픽 라우팅은 내부 서비스 요청과 정확히 동일한 Istio 라우팅 규칙을 사용하여 구성된다.
+
+### Ingress resource
+
+실제로 Hipster Application은 CSP가 제공하는 Kubernetes 컨트롤러인 LoadBalancer를 사용하여 외부에 노출된다.
+
+> 현재는 VM 환경에서 MetalLB로 구성
+
+``` bash
+vagrant@k8s-node1  ~  kubectl get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system
+192.168.100.241
+
+vagrant@k8s-node1  ~  curl 192.168.100.241
+curl: (7) Failed to connect to 192.168.100.241 port 80: Connection refused
+```
+
+상기와 같은 에러는 수신 게이트웨이 뒤에서 실행 중인 서비스가 없기 때문에 연결이 거부된다.
+
+도메인 네임을 Ingress Gateway에 연결하도록 Cloud DNS를 설정한다.
+
+> VM 환경이기에, `/etc/hosts` 내 `192.168.100.241 jeonj.io`를 추가함
+
+``` bash
+kubectl apply -f frontend-ingress.yaml
+
+ vagrant@k8s-node1  ~/istio/istio-workshop-labs   master ±  kubectl get virtualservice,gateway
+NAME                                                         GATEWAYS          HOSTS          AGE
+virtualservice.networking.istio.io/frontend-virtualservice   ["app-gateway"]   ["jeonj.io"]   36s
+
+NAME                                      AGE
+gateway.networking.istio.io/app-gateway   36s
+```
+
+![Hipster](./img/19_13.png)
+
+## Ingress Gateway Exercise
+
+- **Kiali**: dashboard.test01-jeonj.io/kiali
+- **Jaeger Tracing**: tracing.test01-jeonj.io
+
+Istio addon에 대한 Gateway 및 Kiali, Jaeger를 위한 VirtualService 배포
+
+``` yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: addons-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "dashboard.test01-jeonj.io"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: kiali
+spec:
+  hosts:
+  - "dashboard.test01-jeonj.io"
+  gateways:
+  - addons-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /kiali
+    route:
+    - destination:
+        host: kiali
+        port:
+          number: 20001
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: tracing
+spec:
+  hosts:
+  - "dashboard.test01-jeonj.io"
+  gateways:
+  - addons-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /jaeger
+    route:
+    - destination:
+        host: tracing
+        port:
+          number: 80
+```
+
+### Traffic Splitting
+
+![Traffic](./img/19_14.png)
+
+- **VirtualService**: 호스트 주소가 지정될 떄 적용할 트래픽 라우팅 규칙 집합 정의
+- **DestinationRule**: 라우팅이 발생한 후 서비스에 대한 트래픽에 적용되는 정책 정의
+
+
+**VirtualService**
+``` yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: service-a
+spec:
+  hosts:
+    - service-a
+  http:
+    - route:
+        - destination:
+            host: service-a
+            subset: v1
+          weight: 80
+        - destination:
+            host: service-a
+            subset: v2
+          weight: 20
+```
+
+**DestinationRule**
+``` yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: property-business-service
+spec:
+  host: property-business-service
+  subsets:
+    - name: v1
+      labels:
+        version: "1.0"
+    - name: v2
+      labels:
+        version: "1.1"
+```
+
+WIP
