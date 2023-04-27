@@ -144,4 +144,50 @@ Tracing은 복잡한 MSA 서버 사이에서 insight를 제공한다. 뿐만 아
 
 트레이싱 데이터를 수집하려면 서버 간에 HTTP 헤더를 전파하거나, 서버로 들어오는 요청의 프로토콜 등을 aware할 수 있는 무언가가 필요하다. 때문에 이를 해결하기 위해 Istio와 같은 Service Mesh 솔루션을 활용한다.
 
-WIP
+### Jaeger + Istio를 이용한 Server Tracing 구축
+
+**Bookinfo 예제**
+
+Jaeger Install
+``` bash
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.17/samples/addons/jaeger.yaml
+
+kubectl patch svc tracing -n istio-system -p '{"spec": {"type": "NodePort"}}'
+```
+
+``` bash
+while true;do curl http://192.168.100.100:30241/productpage; done
+```
+
+![Jaeger](./img/19_5.png)
+
+Find Traces의 Service를 `productpage.default` 선택
+
+맨 위에 있는 가장 최근 추적을 클릭하면 해당 세부 정보 확인 가능
+
+![Jaeger](./img/19_6.png)
+
+### Jaeger 컴포넌트 및 구조
+
+- query: Jaeger에 수집된 데이터를 시각화해주는 Web UI 서버
+- collector: 실제로 데이터가 수집되는 Jaeger 핵심 서버. 수집된 Jaeger 데이터를 저장하기 위해 [로컬 스토리지, 인메모리, Elastic Search, 카산드라, Kafka] 총 4가지 중 하나를 선택해 사용해야 한다. Kafka로 데이터를 보낼 경우 ingester라는 별도의 Jaeger 컴포넌트를 comsumer로서 deploy 한 다음, Elastic Search 또는 카산드라 백엔드로 보내야 한다.
+- agent: Envoy, Flask, Sping 등과 같은 데이터 소스가 데이터를 전송하기 위한 중간 서버
+
+
+**Jaeger Architecture**
+
+1. All In One Docker Image로 Jaeger 사용
+
+이 경우에는 Jaeger의 데이터를 저장할 백엔드 스토리지를 local storage를 사용할 수 있어 간편하게 사용할 수 있으며, 애플리케이션 서버가 바라보는 Jaeger엔드포인트가 all in one 하나로 고정된다는 장점이 있다. 하지만 경우에 따라 SPOF가 될 수 있다.
+
+![Jaeger](./img/19_7.png)
+
+
+2. collector + query + agent 방식의 Jaeger
+
+실제 프로덕션 환경에서 권장되는 방식이다. 이 경우에는 Tracing 데이터가 [데이터 소스 -> agent -> collector] 순으로 흘러가게 되며, Envoy나 Sping, Flask 등의 애플리케이션 서버에서 바라보게 되는 Jaeger 엔드포인트는 collector가 아닌 agent가 된다.
+
+![Jaeger](./img/19_8.png)
+
+agent는 각 워커 노드에 배포되는 DaemonSet일 수 있고, 각 애플리케이션 서버에 Sidecar로 배포되는 형태일 수 있다. 전자의 경우에는 hostNetwork를 요구하는 Pod로서 agent를 배포하기 때문에 node IP의 downward 값이 엔드포인트가 되고, 후자의 경우에는 pod network Sandbox인 localhost가 엔드포인트가 된다.
+
