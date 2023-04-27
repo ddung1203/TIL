@@ -1,5 +1,7 @@
 # Istio
 
+현재는 샘플 Bookinfo 예제와, 개요 수준으로 다루었지만 추후 프로젝트 시 참조 넣도록 하겠다.
+
 > https://www.istioworkshop.io/
 > 
 > https://github.com/istio/istio
@@ -191,3 +193,24 @@ Find Traces의 Service를 `productpage.default` 선택
 
 agent는 각 워커 노드에 배포되는 DaemonSet일 수 있고, 각 애플리케이션 서버에 Sidecar로 배포되는 형태일 수 있다. 전자의 경우에는 hostNetwork를 요구하는 Pod로서 agent를 배포하기 때문에 node IP의 downward 값이 엔드포인트가 되고, 후자의 경우에는 pod network Sandbox인 localhost가 엔드포인트가 된다.
 
+## Visualize Mesh
+
+Kiali는 웹 대시보드 형태로 Istio 정책을 제어하고 Istio 동작을 확인할 수 있는 기능을 지원한다.
+
+### Kiali Install
+
+``` bash
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.17/samples/addons/kiali.yaml
+
+kubectl patch svc kiali -n istio-system -p '{"spec": {"type": "NodePort"}}'
+```
+
+``` bash
+while true;do curl http://192.168.100.100:30241/productpage; done
+```
+
+![Kiali](./img/19_9.png)
+
+![Kiali](./img/19_10.png)
+
+상기와 같이 그래프는 Istio Telemetry를 사용하여 일정 기간 동안 Service Mesh를 통과하는 트래픽을 보여준다.
