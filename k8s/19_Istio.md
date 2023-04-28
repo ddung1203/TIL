@@ -6,7 +6,7 @@
 >
 > https://github.com/GoogleCloudPlatform/microservices-demo
 >
-> https://github.com/rafik8/istio-workshop-labs.git
+> https://github.com/rafik8/istio-workshop-labs
 > 
 > https://github.com/istio/istio
 
@@ -431,4 +431,42 @@ spec:
         version: "1.1"
 ```
 
-WIP
+``` bash
+kubectl apply -f <(istioctl kube-inject -f frontend-0.1.3.yaml)
+```
+
+`VirtualService`
+``` yaml
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: frontend
+        port:
+          number: 80
+        subset: v1
+      weight: 80
+    - destination:
+        host: frontend
+        port:
+          number: 80
+        subset: v2
+      weight: 20
+```
+
+``` bash
+kubectl apply -f frontend-virtualservice.yaml
+kubectl apply -f frontend-destinationrule.yaml
+```
+
+![Hipster](./img/19_15.png)
+
+![Hipster](./img/19_16.png)
+
+![Hipster](./img/19_17.png)
+
+### 결론
+
+Istio는 DevOps와 SRE에 상기 Tool을 도입하여 개발팀을 대신하여 네트워크 문제를 관리함으로써 집중할 수 있도록 한다.
