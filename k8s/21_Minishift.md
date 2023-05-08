@@ -115,3 +115,39 @@ C:\minishift>oc expose svc/nodejs-ex
 route "nodejs-ex" exposed
 ```
 
+## Ubuntu
+
+### Prerequire
+
+- Docker CE
+
+### Install
+
+``` bash
+wget https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz
+
+tar -xvzf openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz
+cd openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit
+cp oc kubectl /usr/local/bin/
+```
+
+`/etc/docker/daemon.json`
+```
+{
+    "insecure-registries" : [ "172.30.0.0/16" ]
+}
+```
+
+``` bash
+sudo systemctl restart docker
+```
+
+``` bash
+oc cluster up --public-hostname=[your-server-ip]
+```
+
+``` bash
+vagrant@minishift:~$ oc get node
+NAME        STATUS    ROLES     AGE       VERSION
+localhost   Ready     <none>    9m        v1.11.0+d4cacc0
+```
