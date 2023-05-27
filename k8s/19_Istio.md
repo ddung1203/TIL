@@ -5,6 +5,7 @@
 Istio 서비스 메시는 주로 데이터 플레인과 컨트롤 플레인의 두 가지 영역으로 구성되며 하기 그림에 나와 있다.
 
 ![Istio](./img/Istio_1.png)
+
 그림. 데이터 플레인과 컨트롤 플레인
 
 ### 데이터 플레인
@@ -69,10 +70,6 @@ Istio는 Kubernetes 환경에서 서비스 메시를 확장하는 다양한 기�
 
 ## Install
 
-``` bash
-mkdir ~/istio && cd ~/istio
-```
-
 최신 버전 설정
 
 > https://github.com/istio/istio
@@ -87,18 +84,18 @@ curl -L https://git.io/getLatestIstio | sh -
 
 PATH에 istioctl 추가
 ``` bash
-export PATH="$PATH:~/istio-$ISTIO_VERSION/bin"
+export PATH="$PATH:/home/vagrant/istio-$ISTIO_VERSION/bin"
 ```
 
 ``` bash
- vagrant@k8s-node1  ~/istio  istioctl version --remote=false
+ vagrant@k8s-node1 > ~/istio > istioctl version --remote=false
 1.17.2
 ```
 
 
 하기 설치의 경우 demo를 사용한다.
 ``` bash
- vagrant@k8s-node1  ~/istio  istioctl install --set profile=demo -y
+ vagrant@k8s-node1 > ~/istio > istioctl install --set profile=demo -y
 ✔ Istio core installed                                                        
 ✔ Istiod installed                                                            
 ✔ Egress gateways installed                                                   
@@ -332,10 +329,10 @@ Kubernetes Ingress와 달리 Istio Ingress는 트래픽 라우팅 구성이 포�
 > 현재는 VM 환경에서 MetalLB로 구성
 
 ``` bash
-vagrant@k8s-node1  ~  kubectl get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system
+vagrant@k8s-node1 > ~ > kubectl get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system
 192.168.100.241
 
-vagrant@k8s-node1  ~  curl 192.168.100.241
+vagrant@k8s-node1 > ~ > curl 192.168.100.241
 curl: (7) Failed to connect to 192.168.100.241 port 80: Connection refused
 ```
 
@@ -348,7 +345,7 @@ curl: (7) Failed to connect to 192.168.100.241 port 80: Connection refused
 ``` bash
 kubectl apply -f frontend-ingress.yaml
 
- vagrant@k8s-node1  ~/istio/istio-workshop-labs   master ±  kubectl get virtualservice,gateway
+ vagrant@k8s-node1 > ~/istio/istio-workshop-labs >  master ± > kubectl get virtualservice,gateway
 NAME                                                         GATEWAYS          HOSTS          AGE
 virtualservice.networking.istio.io/frontend-virtualservice   ["app-gateway"]   ["jeonj.io"]   36s
 
