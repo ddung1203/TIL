@@ -2,7 +2,9 @@
 
 ConfigMap이나 Secret을 사용하면 애플리케이션과 설정값을 별도로 분리해 관리할 수 있다. 
 
-ConfigMap은 설정값을, Secret에는 노출되어서는 안 되는 비밀값을 저장할 수 있다.
+ConfigMap은 DB의 IP, API를 호출하기 위한 API KEY, 개발/운영에 따른 디버그 모드, 환경 설정과 같은 설정값을,
+
+Secret에는 보안이 중요한 패스워드나, API KEY, 인증서 파일 등 노출되어서는 안 되는 비밀값을 저장할 수 있다.
 
 
 ## 환경변수
@@ -30,13 +32,15 @@ spec:
 
 ConfigMap은 일반적인 설정값을 담아 저장할 수 있는 k8s 오브젝트이며, 네임스페이스에 속하기 때문에 네임스페이스별로 ConfigMap이 존재한다.
 
+ConfigMap은 Key/Value 형식으로 저장이 되며, 값을 Pod로 넘기는 방법은 크게 두 가지가 있다.
 
 - 환경 변수
-- 볼륨/파일
+- 볼륨/파일 마운트
     - 설정파일
     - 암호화 키/인증서
 
 ### 환경변수
+
 `mymessage.yaml`
 
 ``` yaml
@@ -47,6 +51,8 @@ metadata:
 data:
   MESSAGE: Customized Hello ConfigMap
 ```
+
+또는 `kubectl create configmap mymessage --from-literal=MESSAGE='Customized Hello ConfigMap'`
 
 `myweb-env.yaml`
 
@@ -82,7 +88,54 @@ spec:
             key: MESSAGE
 ```
 
-### 파일
+예를 들어, node의 경우 하기와 같다.
+
+``` java
+var os = require('os');
+var http = require('http');
+var handleRequest = function(request, response) {
+
+  response.writeHead(200);
+  response.end(" my prefered language is "+process.env.LANGUAGE+ "\n");
+
+  //log
+  console.log("["+
+		Date(Date.now()).toLocaleString()+
+		"] "+os.hostname());
+}
+
+var www = http.createServer(handleRequest);
+www.listen(8080);
+```
+
+### 환경변수로 값을 전달
+
+``` yaml
+kind: Pod
+metadata:
+  name: myweb-env
+spec:
+  containers:
+    - name: myweb
+      image: ghcr.io/c1t1d0s7/go-myweb:alpine
+      env:
+        valueFrom:
+          configMapKeyRef:
+            name: cm-file
+            key: profile.properties
+```
+
+cm-file configMap에서 키가 `profile.properties`인 값을 읽어와서 환경 변수 PROFILE에 저장한다. 저장된 값은 파일의 내용인 아래 문자열이 된다. 
+
+```
+myname=Joongseok Jeon
+email=jeonjungseok1203@gmail.com
+address=seoul
+```
+
+profile.properties 파일안에 문자열이 Key/Value 형식으로 되어 있다고 하더라도, 개개별 문자열을 Key/Value로 인식하는 것이 아니라 전체 파일 내용을 하나의 문자열로 처리한다. 
+
+### 디스크 볼륨으로 마운트
 `myweb-cm-vol.yaml`
 
 ``` yaml
@@ -105,17 +158,17 @@ spec:
 
 ## Secret
 
-시크릿은 암호, 토큰 또는 키와 같은 소량의 중요한 데이터를 포함하는 오브젝트이다. 이를 사용하지 않으면 중요한 정보가 파드 명세나 컨테이너 이미지에 포함될 수 있다. 시크릿을 사용한다는 것은 사용자의 기밀 데이터를 애플리케이션 코드에 넣을 필요가 없음을 뜻한다.
+Secret은 암호, 토큰 또는 키와 같은 소량의 중요한 데이터를 포함하는 오브젝트이다. 이를 사용하지 않으면 중요한 정보가 파드 명세나 컨테이너 이미지에 포함될 수 있다. Secret을 사용한다는 것은 사용자의 기밀 데이터를 애플리케이션 코드에 넣을 필요가 없음을 뜻한다.
 
-시크릿은 시크릿을 사용하는 파드와 독립적으로 생성될 수 있기 때문에, 파드를 생성하고, 확인하고, 수정하는 워크플로우 동안 시크릿(그리고 데이터)이 노출되는 것에 대한 위험을 경감시킬 수 있다. 쿠버네티스 및 클러스터에서 실행되는 애플리케이션은 비밀 데이터를 비휘발성 저장소에 쓰는 것을 피하는 것과 같이, 시크릿에 대해 추가 예방 조치를 취할 수도 있다.
+Secret은 Secret을 사용하는 파드와 독립적으로 생성될 수 있기 때문에, 파드를 생성하고, 확인하고, 수정하는 워크플로우 동안 Secret(그리고 데이터)이 노출되는 것에 대한 위험을 경감시킬 수 있다. 쿠버네티스 및 클러스터에서 실행되는 애플리케이션은 비밀 데이터를 비휘발성 저장소에 쓰는 것을 피하는 것과 같이, Secret에 대해 추가 예방 조치를 취할 수도 있다.
 
-시크릿은 컨피그맵과 유사하지만 특별히 기밀 데이터를 보관하기 위한 것이다.
+Secret은 ConfigMap과 유사하지만 특별히 기밀 데이터를 보관하기 위한 것이다.
 
-> k8s secret은 기본적으로 API 서버의 etcd에 암호화되지 않은 상태로 저장된다. API access 권한이 있는 모든 사용자 또는 etcd에 접근할 수 있는 모든 사용자는 시크릿을 조회하거나 수정할 수 있다. 또한 네임스페이스에서 파드를 생성할 권한이 있는 사람은 누구나 해당 접근을 사용하여 해당 네임스페이스의 모든 시크릿을 읽을 수 있다. 여기에는 디플로이먼트 생성 기능과 같은 간접 접근이 포함된다.
-
-
+> k8s secret은 기본적으로 API 서버의 etcd에 암호화되지 않은 상태로 저장된다. API access 권한이 있는 모든 사용자 또는 etcd에 접근할 수 있는 모든 사용자는 Secret을 조회하거나 수정할 수 있다. 또한 네임스페이스에서 파드를 생성할 권한이 있는 사람은 누구나 해당 접근을 사용하여 해당 네임스페이스의 모든 Secret을 읽을 수 있다. 여기에는 디플로이먼트 생성 기능과 같은 간접 접근이 포함된다.
 
 value - base64 -> encoded data
+
+> Secret에 저장되는 내용은 패스워드와 같은 단순 문자열의 경우에는 바로 저장이 가능하지만, SSL 인증서와 같은 바이너리 파일의 경우에는 문자열로 저장이 불가능하다. 따라서 이러한 바이너리 파일 저장을 지원하기 위해서 Secret의 경우에는 저장되는 값을 base64로 인코딩을 하여 저장하도록 되어있다.
 
 > Hashicorp Vault AWS KMS ...
 
@@ -152,7 +205,7 @@ data:
 상기 `secret`은 민감한 데이터를 저장하기 위해 만든 것이지만 인코딩만 할 뿐 암호화를 하지 않아 안전하지 않다.
 
 ``` bash
- vagrant@k8s-node1  ~/volume  echo "YWRtaW4K" | base64 -d
+ vagrant@k8s-node1 > ~/volume > echo "YWRtaW4K" | base64 -d
 admin
 ```
 
