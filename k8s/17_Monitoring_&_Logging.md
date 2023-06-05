@@ -69,6 +69,12 @@ CPU, Memory, Network IO, Disk IO
   - Prometheus
 ![Prometheus](./img/17_1.png)
 
+Prometheus는 데이터 수집을 Pulling 모델을 사용한다. 모니터링 대상이 되는 자원이 Metric 정보를 Prometheus로 보내는 것이 아니라, Prometheus가 주기적으로 모니터링 대상에서 Metric을 읽어오는 모델을 사용한다.
+
+만약에 모니터링 대상이 Prometheus의 데이터 포맷을 지원하지 않을 경우 exporter를 통해 Metric을 읽어올 수 있다. 
+
+또한 Push gateway를 사용할 수 있다. 배치나 스케쥴 작업의 경우 항상 서비스가 떠 있는 것이 아닌, 필요한 경우에만 떠 있다가 작업이 끝나면 사라지는 경우가 있다. 이러한 서비스를 Pulling으로 Metric을 얻어오기가 어려울 수 있ㄴ느데, 이를 보완하기 위해 Push 방식으로 Push gateway에 Metric을 전송하면 Push gateway가 Metric을 보관하고 있다가 Prometheus 서버가 Pulling을 할 때 저장된 Metric 정보를 리턴한다.
+
 > https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
 
 ``` bash
