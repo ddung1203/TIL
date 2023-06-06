@@ -43,7 +43,7 @@ sudo apt install python3-pip -y
 ```
 
 ```
-sudo pip3 install -r requirments.txt
+sudo pip3 install -r requirements.txt
 ```
 
 ## 4. 인벤토리 구성
