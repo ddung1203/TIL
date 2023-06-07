@@ -104,17 +104,35 @@ kubectl config get-users
 kubectl config use-context jeonj@jeonj-cluster
 ```
 
-## 인증
-쿠버네티스의 사용자
+## 인증 (Authentication)
+
+Kubernetes는 계정 체계를 관리함에 있어서 사람이 사용하는 사용자 Account와 시스템이 사용하는 서비스 Account를 제공한다.
+
+**사용자 어카운트**
+
+일반적인 사용자 아이디의 개념이다.
+
+Kubernetes는 자체적으로 사용자 계정을 관리하고 이를 인증하는 시스템을 가지고 있지 않다. 반드시 별도의 외부 계정 시스템을 사용해야 하며, 계정 시스템 연동을 위해서 OAuth나 Webhook과 같은 계정 연동 방식을 지원한다.
+
+**서비스 어카운트**
+
+클라이언트가 Kubernetes API를 호출하거나, 콘솔이나 기타 클라이언트가 Kubernetes API를 접근하고자 할 때, 실제 사용자가 아닌 시스템이 된다. 따라서 Kubernetes에서는 이를 사용자와 분리해서 관리하는데 이를 서비스 어카운트라고 한다. 
+
+``` bash
+kubectl create sa foo
+```
+
+하기와 같이 쉽게 정리가 가능하다.
+
+- User Account(Normal User) : 일반 사용자(쿠버네티스가 관리 X)
+  - 사용자 O
+  - Pod 사용 X
 
 - Service Account(sa) : 쿠버네티스가 관리하는 SA 사용자
   - 사용자 X
   - Pod 사용
-- Normal User : 일반 사용자(쿠버네티스가 관리 X)
-  - 사용자 O
-  - Pod 사용 X
 
-인증 방법
+**인증 방법**
 - x509 인증서
 - 토큰
   - Bearer Token
@@ -136,7 +154,16 @@ kubectl config use-context jeonj@jeonj-cluster
   - ClusterRole <-> ClusterRoleBinding <-> SA/User
 > https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 
-#### Role
+## 권한 관리(Authorization)
+
+![RBAC](./img/16_1.png)
+
+- 사용자의 계정은 개별 사용자인 user, 사용자들의 그룹인 user group, 시스템의 계정을 정의하는 service account로 정의된다.
+- 권한은 Role로, 각각의 리소스에 대한 권한이 정의된다.
+  - ex) pod 정보에 대한 create/list/delete 등
+- 정의된 Role은 계정과 RoleBinding을 통해 계정과 연결이 된다.
+
+### Role
 
 ``` yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -152,6 +179,26 @@ rules:
 
 rules에는 사용자가 어떤 권한을 사용할 수 있는지를 설정한다.
 Pods 리소스에 대해서 get, watch, list를 할 수 있다는 것이다. rules와 verbs는 리스트이므로 여러개를 지정할 수 있다.
+
+### RoleBinding
+
+다음은 상기의 Role을 사용자에게 부여하기 위해서 RoleBinding 설정을 하기와 같이 정의한다. 
+
+``` yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: default
+  name: read-pods
+subjects:
+- kind: User
+  name: jeon
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+```
 
 
 #### 요청 동사
@@ -184,7 +231,7 @@ I0408 00:08:14.801163   13976 round_trippers.go:574] Response Status: 200 OK in 
 `-v`: 상세정보를 보는 옵션으로, 0~9 값을 지정한다(0<9).
 
 
-#### ClusterRole
+### ClusterRole
 
 ``` yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -205,6 +252,14 @@ rules:
 - edit : 생성/삭제/변경할 수 있는 권한
 - admin : 모든것 관리(-RBAC : ClusterRole 제외)
 - cluster-admin : 모든것 관리
+
+**Role vs. ClusterRole**
+
+Role은 적용 범위에 따라 Cluster Role과 일반 Role로 분리 된다. Role의 경우 특정 네임스페이스내의 리소스에 대한 권한을 정의할 수 있다. 
+
+반면 ClusterRole의 경우, Cluster 전체에 걸쳐서 권한을 정의할 수 있다는 차이가 있다. 또한 ClusterRole의 경우에는 여러 네임스페이스에 걸쳐 있는 nodes 와 같은 리소스스나 /heathz와 같이 리소스 타입이 아닌 자원에 대해서도 권한을 정의할 수 있다.
+
+Role과 ClusterRole은 각각 RoleBinding과 ClusterRoleBinding 을 통해서 사용자에게 적용된다.
 
 ## SA
 
@@ -428,3 +483,4 @@ imagePullSecrets:
 
 앞으로 Pod를 생성하는 yaml 파일에서 serviceAccountName 항목에 reg-auth-jeonj Service Account를 지정해 생성하면 자동으로 imagePullSecrets 항목이 Pod `spec`에 추가된다. 
 
+[조대협의 블로그](https://bcho.tistory.com/1272)의 `보안 1/4 - 사용자 계정 인증 및 권한 인가` 부분 참고하여 작성
