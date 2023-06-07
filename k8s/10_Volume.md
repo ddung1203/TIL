@@ -768,3 +768,13 @@ subjects:
   name: jenkins-admin
   namespace: default
 ```
+
+> **`jenkins-deployment`에 사용된 Security Context**
+> 
+> Security Context(보안 컨텍스트)는 K8s의 Pod나 컨테이너에 대한 접근 제어 설정이나 특수 권한을 설정하는 기능을 제공한다. 컨테이너 내에서 동작하는 프로세스의 사용자 ID나 그룹 ID를 설정하거나, 프로세스에 커널에 대한 접근 권한을 부여하는 것과 같은 기능을 할 수 있다.
+>
+> 상기 예제는 UID 1000, GID 1000으로 지정되어 있다. 따라서 `root` 사용자가 아닌 `jenkins` 사용자로 구동이 된다.
+> 
+> jenkins pod에 접속하여 `ps -ef` 명령을 확인해보면, UID가 jenkins로 생성되어 있는 것을 확인할 수 있다.
+> 
+> 이점: 보안 강화, 격리, 호환성 -> 시스템에 액세스하여 모든 작업을 수행하거나 다른 컨테이너의 침해 방지, 리소스 제한 우회 방지 등
