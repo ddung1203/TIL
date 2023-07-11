@@ -17,14 +17,14 @@
 ## 재시작 정책
 
 - pod.spec.restartPolicy
-	- Always(기본)
-	- OnFailure
-	- Never
+  - Always(기본)
+  - OnFailure
+  - Never
 
 ## 지수 백오프
 
 - 파드 실패 시 재시작 정책에 의해 재시작을 하게 됨
-	- 재시작 시간 10, 20, 40, 80, ..., 300초 까지 유예기간
+  - 재시작 시간 10, 20, 40, 80, ..., 300초 까지 유예기간
 
 ## 컨테이너 프로브
 
@@ -37,15 +37,15 @@
 ### 프로브 매커니즘
 
 - httpGet
-	- Web, WebApp
-	- 응답 코드 2XX, 3XX
+  - Web, WebApp
+  - 응답 코드 2XX, 3XX
 - tcpSocket
-	- 해당 포트 TCP 연결
+  - 해당 포트 TCP 연결
 - grpc
-	- grpc 프로토콜 연결
+  - grpc 프로토콜 연결
 - exec
-	- 명령 실행
-	- 종료 코드 0!
+  - 명령 실행
+  - 종료 코드 0!
 
 ### Running 상태가 되기 위한 조건
 
@@ -57,21 +57,21 @@ Running은 Pod의 컨테이너들이 정상적으로 생성됐다는 것을 의�
 
 **Init Container**
 
-Init 컨테이너는 컨테이너 내부에서 애플리케이션이 실행되기 전에 초기화를 수행하는 컨테이너이다. Pod의 애플리케이션 컨테이너가 실행되기 전에 특정 작업을 미리 수행하는 용도로 사용할 수 있다. 
+Init 컨테이너는 컨테이너 내부에서 애플리케이션이 실행되기 전에 초기화를 수행하는 컨테이너이다. Pod의 애플리케이션 컨테이너가 실행되기 전에 특정 작업을 미리 수행하는 용도로 사용할 수 있다.
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: init-container-example
 spec:
   initContainers:
-  - name: my-init-container
-    image: busybox
-    command: ["sh", "-c", "echo Hello world"]
+    - name: my-init-container
+      image: busybox
+      command: ["sh", "-c", "echo Hello world"]
   containers:
-  - name: nginx
-    image: nginx
+    - name: nginx
+      image: nginx
 ```
 
 상기의 `initConatainers` 항목이 먼저 실행된 뒤, `containers` 항목에 정의한 컨테이너가 생성된다.
@@ -80,19 +80,24 @@ spec:
 
 이러한 성질로, Init 컨테이너 내부에서 하기와 같이 `dig`나 `nslookup` 명령어 등을 이용해 다른 Deployment가 생성되기를 기다리거나, 애플리케이션 커네티언가 사용할 설정 파일 등을 미리 준비해 둘 수 있다.
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: init-container
 spec:
   containers:
-  - name: nginx
-    image: nginx
+    - name: nginx
+      image: nginx
   initContainers:
-  - name: wait
-    image: busybox
-    command: ["sh", "-c", "until nslookup myservice; do echo waiting..; sleep 1; done;"]
+    - name: wait
+      image: busybox
+      command:
+        [
+          "sh",
+          "-c",
+          "until nslookup myservice; do echo waiting..; sleep 1; done;",
+        ]
 ```
 
 **postStart**
@@ -102,15 +107,15 @@ Pod의 컨테이너가 실행되거나 삭제될 떄, 특정 작업을 수행하
 - HTTP: 컨테이너가 시작한 직후, 특정 주소로 HTTP 요청을 전송
 - Exec: 컨테이너가 시작한 직후, 컨테이너 내부에서 특정 명령어를 실행
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: poststart-hook
 spec:
   containers:
-  - name: poststart-hook
-    image: nginx
+    - name: poststart-hook
+      image: nginx
   lifecycle:
     postStart:
       exec:
@@ -127,19 +132,20 @@ postStart는 컨테이너의 Entrypoint와는 비동기적으로 실행되며, I
 - readinessProbe: 컨테이너 내부의 애플리케이션이 사용자 요청을 처리할 준비가 되었는지 검사한다. 검사에 실패할 경우 컨테니어는 서비스의 라우팅 대상에서 제외된다.
 
 `livenessProbe.yaml`
-``` yaml
+
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: livenessprobe
 spec:
   containers:
-  - name: livenessprobe
-    image: nginx
-    livenessProbe:
-      httpGet:
-        port: 80
-        path: /
+    - name: livenessprobe
+      image: nginx
+      livenessProbe:
+        httpGet:
+          port: 80
+          path: /
 ```
 
 - httpGet: HTTP 요청을 전송해 상태 검사
@@ -147,30 +153,32 @@ spec:
 - tcpSocket: TCP 연결이 수립될 수 있는지 체크함으로써 상태 검사
 
 `readinessProbe.yaml`
-``` yaml
+
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: readinessprobe
 spec:
   containers:
-  - name: readinessprobe
-    image: nginx
-    readinessprobe:
-      httpGet:
-        port: 80
-        path: /
+    - name: readinessprobe
+      image: nginx
+      readinessprobe:
+        httpGet:
+          port: 80
+          path: /
 ```
 
 readinessProbe의 실패의 경우 RESTARTS 횟수가 증가하지 않으며, 단순히 READY 상태인 컨테이너가 하나 줄어들게 된다. 따라서 서비스 리소스는 사용자 요청을 이 Pod로 전달하지 않는다.
 
-
 ### 프로브 결과
+
 - success
 - failure
 - unknown
 
 `pods.spec.containers.livenessProbe`
+
 - exec
 - httpGet
 - tcpSocker

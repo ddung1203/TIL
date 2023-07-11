@@ -3,7 +3,8 @@
 ## Replication Controller
 
 `myweb-rc.yaml`
-``` yaml
+
+```yaml
 apiVersion: v1
 kind: ReplicationController
 metadata:
@@ -12,7 +13,7 @@ spec:
   replicas: 3
   selector:
     app: web
-# Pod Configure
+  # Pod Configure
   template:
     metadata:
       labels:
@@ -26,40 +27,44 @@ spec:
               protocol: TCP
 ```
 
-``` bash
+```bash
 kubectl create -f myweb-rc.yaml
 ```
 
 ### RC 스케일링
 
 명령형 커맨드
-``` bash
+
+```bash
 kubectl scale rc myweb-rc --replicas=5
 ```
 
 명령형 오브젝트 구성
-``` bash
+
+```bash
 kubectl replace -f myweb-rc.yaml
 ```
 
-``` bash
+```bash
 kubectl patch -f myweb-rc.yaml -p '{"spec": {"replicas": 3}}'
 kubectl patch rc myweb-rc.yaml --patch-file replicas.json
 ```
 
 `replicas.json`
-``` json
-{"spec": {"replicas": 3}}
+
+```json
+{ "spec": { "replicas": 3 } }
 ```
 
-``` bash
+```bash
 kubectl edit -f myweb-rc.yaml
 kubectl edit rc myweb-rc
 kubectl edit rc/myweb-rc
 ```
 
 선언형 오브젝트 구성
-``` bash
+
+```bash
 kubectl apply -f myweb-rc.yaml
 ```
 
@@ -67,28 +72,33 @@ kubectl apply -f myweb-rc.yaml
 
 - Pod, ReplicaSet이 어떻게 구성되어야 하는지 정의한다.
   - ReplicaSet: 지정된 수의 Pod Replica가 항상 실행되도록 보장
-  - 단독으로 사용 가능하지만, Deployment가 많은 기능을 제공하는 상위 개념이기 때문에 Deployment를 사용하는 것이 권장된다. 
+  - 단독으로 사용 가능하지만, Deployment가 많은 기능을 제공하는 상위 개념이기 때문에 Deployment를 사용하는 것이 권장된다.
 - 버전 업데이트 등으로 인해 원하는 정의가 변경되었을 때는 현재 상태에서 원하는 상티로 바뀌도록 변경한다.
-
-
 
 ReplicationController -> ReplicaSets
 
 ### Controller 역할
 
 1. Auto Healing
-  - Pod가 실행이 되고 있는 Node에 문제가 생겼을 경우 자동으로 복구하는 기능
-  - ex) ReplicaSet, DaemonSet
-2. Software Update
-  - Pod를 업데이트하는 기능 / 롤백 기능 또한 존재
-  - ex) Deployment
-3. Auto Scaling
-  - Pod의 리소스가 부족할 때 Pod를 추가적으로 생성하는 기능
-4. Job
-  - 일시적인 작업을 위해 필요한 순간에만 Pod를 만들었다가 삭제할 수 있는 기능
-  - ex) Job, CronJob
 
-``` yaml
+- Pod가 실행이 되고 있는 Node에 문제가 생겼을 경우 자동으로 복구하는 기능
+- ex) ReplicaSet, DaemonSet
+
+2. Software Update
+
+- Pod를 업데이트하는 기능 / 롤백 기능 또한 존재
+- ex) Deployment
+
+3. Auto Scaling
+
+- Pod의 리소스가 부족할 때 Pod를 추가적으로 생성하는 기능
+
+4. Job
+
+- 일시적인 작업을 위해 필요한 순간에만 Pod를 만들었다가 삭제할 수 있는 기능
+- ex) Job, CronJob
+
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSets
 metadata:
@@ -113,7 +123,7 @@ spec:
               protocol: TCP
 ```
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -124,7 +134,7 @@ spec:
     matchExpressions:
       - key: app
         operator: In
-        values: 
+        values:
           - web
       - key: env
         operator: Exists
@@ -150,7 +160,7 @@ spec:
 - DaemonSet이 구동중인 Cluster에 노드가 추가되면 해당 노드에도 DaemonSet Pod가 배포
 - 삭제된 DatemonSet Pod가 다른 노드로 이동하지 않음
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -183,32 +193,7 @@ spec:
 - 하나 이상의 Pod를 지정하고 지정된 수의 Pod를 성공적으로 실행하고 종료될 때까지 Pod의 실행을 재시도
 - 백업이나 특정 배치 파일들처럼 한번 실행하고 종료되는 성격의 작업에 사용
 
-
-``` yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: mypi
-spec:
-  template:
-    spec:
-      containers:
-        - image: perl  
-          name: mypi
-          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
-      restartPolicy: OnFailure
-```
-
-### 잡 컨트롤러의 레이블
-파드 템플릿의 레이블/잡 컨트롤러의 레이블 셀렉터는 지정하지 않는다.
--> 잘못된 매핑으로 기존의 파드를 종료하지 않게 하기 위함
-
-### 파드의 종료 및 삭제
-
-`job.spec.activeDeadlineSeconds` : 애플리케이션이 실행될 수 있는 시간 지정
-`job.spec.ttlSecondsAfterFinished` : 컨트롤러 및 파드 삭제
-
-``` yaml
+```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -219,16 +204,42 @@ spec:
       containers:
         - image: perl
           name: mypi
-          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: OnFailure
+```
+
+### 잡 컨트롤러의 레이블
+
+파드 템플릿의 레이블/잡 컨트롤러의 레이블 셀렉터는 지정하지 않는다.
+-> 잘못된 매핑으로 기존의 파드를 종료하지 않게 하기 위함
+
+### 파드의 종료 및 삭제
+
+`job.spec.activeDeadlineSeconds` : 애플리케이션이 실행될 수 있는 시간 지정
+`job.spec.ttlSecondsAfterFinished` : 컨트롤러 및 파드 삭제
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mypi
+spec:
+  template:
+    spec:
+      containers:
+        - image: perl
+          name: mypi
+          command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(2000)"]
       restartPolicy: OnFailure
   ttlSecondsAfterFinished: 10
 ```
 
 ### 작업의 병렬 처리
+
 `job.spec.completions` : 완료 횟수
 `job.spec.parallelism` : 병렬 개수
 
-``` yaml
+```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -241,7 +252,7 @@ spec:
       containers:
         - image: perl
           name: mypi
-          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(1500)"]
+          command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(1500)"]
       restartPolicy: OnFailure
 ```
 
@@ -251,7 +262,7 @@ spec:
 
 > kubectl explain cj --api-version=batch/v1beta1
 
-``` yaml
+```yaml
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -271,6 +282,7 @@ spec:
 ```
 
 `cj.spec.concurrencyPolicy`
+
 - Allow : 동시 작업 가능
 - Forbid : 동시 작업 금지(이전 작업이 계속 실행 됨)
 - Replace : 교체(이전 작업은 종료되고 새로운 작업 실행)
