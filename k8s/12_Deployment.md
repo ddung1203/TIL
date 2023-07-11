@@ -8,8 +8,8 @@ Deployment는 Pod 업데이트를 위해 사용되는 기본 컨트롤러이다.
 
 Deployment는 컨테이너 애플리케이션을 배포하고 관리하는 역할을 담당한다. 애플리케이션을 업데이트할 때 Replica Set의 변경 사항을 저장하는 리비전을 남겨 롤백을 가능하게 해주고, 무중단 서비스를 위해 Pod의 롤링 업데이트의 전략을 지정할 수도 있다.
 
-
 ## Deployment Update
+
 Deployment Update 방식
 
 1. Rolling Update
@@ -49,7 +49,7 @@ Canary는 테스트라는 특징을 가지고 있다.
 
 ## Rollout
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -71,7 +71,7 @@ spec:
             - containerPort: 8080
 ```
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -85,22 +85,21 @@ spec:
       targetPort: 8080
 ```
 
-``` bash
+```bash
  vagrant@k8s-node1 > ~/deployment > kubectl rollout status deploy myweb-deploy
 deployment "myweb-deploy" successfully rolled out
 ```
 
-``` bash
+```bash
  vagrant@k8s-node1 > ~/deployment > kubectl rollout history deploy myweb-deploy
-deployment.apps/myweb-deploy 
+deployment.apps/myweb-deploy
 REVISION  CHANGE-CAUSE
 1         <none>
 ```
 
 상기의 상세 정보를 보려면 `--revision` 옵션으로 번호를 지정한다.
 
-
-``` bash
+```bash
  vagrant@k8s-node1 > ~/deployment > kubectl set image deployments myweb-deploy myweb=ghcr.io/c1t1d0s7/go-myweb:v2.0 --record
 Flag --record has been deprecated, --record will be removed in the future
 deployment.apps/myweb-deploy image updated
@@ -111,7 +110,7 @@ Waiting for deployment "myweb-deploy" rollout to finish: 1 old replicas are pend
 deployment "myweb-deploy" successfully rolled out
 
  vagrant@k8s-node1 > ~/deployment > kubectl rollout history deploy myweb-deploy
-deployment.apps/myweb-deploy 
+deployment.apps/myweb-deploy
 REVISION  CHANGE-CAUSE
 1         <none>
 2         kubectl set image deployments myweb-deploy myweb=ghcr.io/c1t1d0s7/go-myweb:v2.0 --record=true
@@ -121,12 +120,12 @@ REVISION  CHANGE-CAUSE
 
 **undo**
 
-``` bash
- vagrant@k8s-node1 > ~/deployment > kubectl rollout undo deploy myweb-deploy   
+```bash
+ vagrant@k8s-node1 > ~/deployment > kubectl rollout undo deploy myweb-deploy
 deployment.apps/myweb-deploy rolled back
 
  vagrant@k8s-node1 > ~/deployment > kubectl rollout history deploy myweb-deploy
-deployment.apps/myweb-deploy 
+deployment.apps/myweb-deploy
 REVISION  CHANGE-CAUSE
 2         kubectl set image deployments myweb-deploy myweb=ghcr.io/c1t1d0s7/go-myweb:v2.0 --record=true
 3         <none>
@@ -135,17 +134,16 @@ REVISION  CHANGE-CAUSE
 
 2.0에서 1.0으로 undo, 되돌리는 것이지만 상기와 같이 3.0으로 표시된다. 즉, 다시 되돌아간 상태를 1.0이 아닌 3.0으로 본다.
 
-``` bash
+```bash
  vagrant@k8s-node1 > ~/deployment > kubectl rollout undo deploy myweb-deploy --to-revision=2
 deployment.apps/myweb-deploy rolled back
 ```
 
-상기와 같이 옵션으로 번호를 지정하여 해당 버전으로 undo한다. 
+상기와 같이 옵션으로 번호를 지정하여 해당 버전으로 undo한다.
 
 > 기본값은 바로 직전 버전
 
-
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -155,19 +153,18 @@ metadata:
     ...
 ```
 
-``` bash
+```bash
 kubectl apply -f myweb-deploy.yaml
 ```
 
 `set` 명령을 사용하면 이미지가 어떻게 변경됐는지 알 수 있지만, `apply` 명령은 어떻게 변경되었는지 알기 힘들다. 따라서 파일을 수정할 떄는 상기와 같이 `annotations`을 지정한다.
-
 
 ### Max Surge & Max Unavailable
 
 - `maxSurge` : Rolling Update 도중 전체 파드의 개수가 Deploy의 replicas 값보다 얼마나 더 많이 존재할 수 있는지 설정한다.
 - `maxUnavailable` : Rolling Update 도중 사용 불가능한 상태가 되는 파드의 최대 개수를 설정한다.
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -199,3 +196,42 @@ spec:
 - Deployment의 replicas에 설정된 파드 개수 : 3개
 - `maxUnavailable` : 1 (전체 파드 개수가 3개 이하로 떨어지지 않음)
 - `maxSurge` : 2 (전체 파드 개수는 3 + 2 = 5개를 넘을 수 없음)
+
+### An examplf of a rolling update strategy
+
+```yaml
+
+---
+kind: deployment
+spec:
+  replicas: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurege: 5
+      maxUnavailable: 30%
+```
+
+가정.
+
+이전 ReaplicaSet에는 10개의 Pod가 있다. maxSurge를 바탕으로 새 ReplicaSet에 새로운 Pod 5개를 생성하면서 배포가 시작된다.
+
+새로운 Pod가 준비되면, 총 Pod의 수는 15로 변경된다.
+
+maxUnavavailable이 30%로 설정되면 이전 또는 새 ReplicaSet과 관계없이 실행되는 최소 Pod 수는 10에서 30%를 뺀 값으로 7개의 Pod가 실행된다.
+
+따라서 이전 ReplicaSet에서 총 8개의 Pod가 삭제될 수 있다.
+
+이렇게 하면 최소 총 7개의 Pod가 유지된다.
+
+5개는 새 ReplicaSet에, 2개는 이전 ReplicaSet에 있다.
+
+다음으로, 5개의 Pod가 추가로 새 ReplicaSet에 실행된다.
+
+이렇게 하면 새 ReplicaSet에 총 10개의 Pod가 생성되고, 전채 ReplicaSet에는 총 12개의 Pod가 생성된다.
+
+마지막으로 남아있는 Pod 2개와 이전 세트가 삭제되고 새 ReplicaSet에 Pod 10개가 남게 된다.
+
++) minReadySeconds: 컨테이너가 충돌하지 않고 Pod가 사용 가능한 것으로 간주되기까지 대기하는 시간. 기본값은 0이며, Pod가 준비되는 즉시 사용할 수 있다는 뜻이다.
+
++) progressDeadlineSeconds: 배포가 진행에 실패했다고 보고하기까지 대기하는 시간을 지정.
