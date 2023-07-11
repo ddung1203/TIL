@@ -256,6 +256,38 @@ spec:
       restartPolicy: OnFailure
 ```
 
+### Parallel job with fixed completion count
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-app-job
+spec:
+  completions: 3
+  parallelism: 2
+  template:
+    spec:
+```
+
+컨트롤러는 3개의 Pod가 성공적으로 종료될 때까지 동시에 Pod 최대 두 개를 실행하여 태스크를 처리한다. 실행 중인 Pod 중 하나가 성공적으로 완료되면 컨트롤러는 다음 Pod를 시작한다. 지정된 완료 횟수에 도달하면 작업이 완료된 것으로 간주된다. 남은 완료 횟수가 parallelism 값보다 작으면, 해당 시점에 작업에 대해 원하는 총 횟수를 완료하기에 충분한 나머지 Pod가 실행되고 있기 때문에 컨트롤러는 새 Pod를 예약하지 않는다.
+
+### Failing a Job
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-app-job
+spec:
+  backoffLimit: 4
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+```
+
+Pod 실패를 제한하는 한 가지 방법은 backoffLimit을 사용하는 것이다. 또 다른 옵션은 activeDeadlineSeconds 설정을 사용하여 작업 완료에 대한 활성 기한을 설정한다. 시한데 도달하면 작업과 모든 Pod는 deadline exceeded를 이유로 종료된다(활성 기한이 backoffLimit 보다 우선).
+
 ## CronJob
 
 - 지정한 일정에 따라 반복적으로 Job을 실행
