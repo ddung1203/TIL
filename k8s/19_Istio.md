@@ -1,5 +1,7 @@
 # Istio
 
+Istio는 Micro service 배포에서 서비스 검색, 제어, 가시성을 지원하는 서비스 메시이다.
+
 ## Istio 구성 요소 이해
 
 Istio 서비스 메시는 주로 데이터 플레인과 컨트롤 플레인의 두 가지 영역으로 구성되며 하기 그림에 나와 있다.
@@ -10,7 +12,7 @@ Istio 서비스 메시는 주로 데이터 플레인과 컨트롤 플레인의 �
 
 ### 데이터 플레인
 
-모든 인바운드 및 아웃바운드 네트워크 트래픽을 가로채는 방식으로 구현된다. Istio 서비스 메시의 데이터 플레인은 서비스 프록시와 사이드카 컨테이너라는 두 가지 개념으로 구성된다. 
+모든 인바운드 및 아웃바운드 네트워크 트래픽을 가로채는 방식으로 구현된다. Istio 서비스 메시의 데이터 플레인은 서비스 프록시와 사이드카 컨테이너라는 두 가지 개념으로 구성된다.
 
 **서비스 프록시**
 
@@ -30,11 +32,11 @@ Pilot은 Kubernetes 클러스터에서 실행되는 모든 마이크로서비스
 
 **Mixer**
 
-Mixer는 모든 것을 하나로 모으는 Istio 서비스이다. 각 분산된 istio-proxy는 분석을 Mixer로 전달한다. 또한 Pod의 전체에 대한 사용 및 액세스 정책의 표준 모델을 유지한다. Mixer를 사용하면 ACL을 생성하고 속도 제한 규칙을 적용하고 사용자 정의 metrics를 캡처할 수도 있다. 
+Mixer는 모든 것을 하나로 모으는 Istio 서비스이다. 각 분산된 istio-proxy는 분석을 Mixer로 전달한다. 또한 Pod의 전체에 대한 사용 및 액세스 정책의 표준 모델을 유지한다. Mixer를 사용하면 ACL을 생성하고 속도 제한 규칙을 적용하고 사용자 정의 metrics를 캡처할 수도 있다.
 
 **CA**
 
-Istio Auth 구성 요소는 인증서 서명, 인증서 발급 및 해지/순환을 담당한다. Istio는 모든 마이크로서비스에 x509 인증서를 발급하여 해당 서비스 간에 상호 전송 계층 보안(mTLS)을 허용하고 모든 트래픽을 투명하게 암호화한다. 기본 배포 플랫폼에 내장된 ID를 사용하고 이를 인증서에 구축한다. 
+Istio Auth 구성 요소는 인증서 서명, 인증서 발급 및 해지/순환을 담당한다. Istio는 모든 마이크로서비스에 x509 인증서를 발급하여 해당 서비스 간에 상호 전송 계층 보안(mTLS)을 허용하고 모든 트래픽을 투명하게 암호화한다. 기본 배포 플랫폼에 내장된 ID를 사용하고 이를 인증서에 구축한다.
 
 현재는 샘플 Bookinfo 예제와, 개요 수준으로 다루었지만 추후 프로젝트 시 참조 넣도록 하겠다.
 
@@ -43,7 +45,7 @@ Istio Auth 구성 요소는 인증서 서명, 인증서 발급 및 해지/순환
 > https://github.com/GoogleCloudPlatform/microservices-demo
 >
 > https://github.com/rafik8/istio-workshop-labs
-> 
+>
 > https://github.com/istio/istio
 
 Istio는 Kubernetes 환경에서 서비스 메시를 관리하기 위한 오프소스 플랫폼이다. Envoy를 기반으로 하며, 서비스 간 트래픽 관리, 인증 및 권한 부여, 서비스 모니터링, 로깅 등 다양한 기능을 제공한다.
@@ -74,37 +76,39 @@ Istio는 Kubernetes 환경에서 서비스 메시를 확장하는 다양한 기�
 
 > https://github.com/istio/istio
 
-``` bash
+```bash
 export ISTIO_VERSION=1.17.2
 ```
 
-``` bash
+```bash
 curl -L https://git.io/getLatestIstio | sh -
 ```
 
 PATH에 istioctl 추가
-``` bash
+
+```bash
 export PATH="$PATH:/home/vagrant/istio-$ISTIO_VERSION/bin"
 ```
 
-``` bash
+```bash
  vagrant@k8s-node1 > ~/istio > istioctl version --remote=false
 1.17.2
 ```
 
-
 하기 설치의 경우 demo를 사용한다.
-``` bash
+
+```bash
  vagrant@k8s-node1 > ~/istio > istioctl install --set profile=demo -y
-✔ Istio core installed                                                        
-✔ Istiod installed                                                            
-✔ Egress gateways installed                                                   
-✔ Ingress gateways installed                                                  
-✔ Installation complete                                                       
+✔ Istio core installed
+✔ Istiod installed
+✔ Egress gateways installed
+✔ Ingress gateways installed
+✔ Installation complete
 ```
 
 namespace label을 추가하여 Istio에 Envoy를 자동으로 삽입
-``` bash
+
+```bash
 kubectl label namespace default istio-injection=enabled
 ```
 
@@ -113,7 +117,8 @@ kubectl label namespace default istio-injection=enabled
 서비스 mesh traffic을 확인하기 위해 Istio Dashboard를 활용한다. Grafana, Prometheus의 Addon을 설치하고, Bookinfo의 예제를 통해 확인해보겠다.
 
 ### 샘플 Prometheus 설치
-``` bash
+
+```bash
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.17/samples/addons/prometheus.yaml
 
 kubectl patch svc prometheus -n istio-system -p '{"spec": {"type": "NodePort"}}'
@@ -144,15 +149,15 @@ Bookinfo Application은 4개의 Micro Service로 나뉜다.
 
 기본 Istio 설치는 automatic sidecar injection을 사용한다. label은 하기와 같이 `istio-injection=enabled`로 설정한다.
 
-``` bash
+```bash
 kubectl label namespace default istio-injection=enabled
 ```
 
-``` bash
+```bash
 kubectl apply -f ./istio-1.17.2/samples/bookinfo/platform/kube/bookinfo.yaml
 ```
 
-``` bash
+```bash
 kubectl patch svc productpage -p '{"spec": {"type": "NodePort"}}'
 ```
 
@@ -160,8 +165,7 @@ kubectl patch svc productpage -p '{"spec": {"type": "NodePort"}}'
 
 Bookinfo에 요청을 보내 트래픽을 확인한다.
 
-
-``` bash
+```bash
 while true;do curl http://192.168.100.100:30241/productpage; done
 ```
 
@@ -187,13 +191,14 @@ Tracing은 복잡한 MSA 서버 사이에서 insight를 제공한다. 뿐만 아
 **Bookinfo 예제**
 
 Jaeger Install
-``` bash
+
+```bash
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.17/samples/addons/jaeger.yaml
 
 kubectl patch svc tracing -n istio-system -p '{"spec": {"type": "NodePort"}}'
 ```
 
-``` bash
+```bash
 while true;do curl http://192.168.100.100:30241/productpage; done
 ```
 
@@ -211,7 +216,6 @@ Find Traces의 Service를 `productpage.default` 선택
 - collector: 실제로 데이터가 수집되는 Jaeger 핵심 서버. 수집된 Jaeger 데이터를 저장하기 위해 [로컬 스토리지, 인메모리, Elastic Search, 카산드라, Kafka] 총 4가지 중 하나를 선택해 사용해야 한다. Kafka로 데이터를 보낼 경우 ingester라는 별도의 Jaeger 컴포넌트를 comsumer로서 deploy 한 다음, Elastic Search 또는 카산드라 백엔드로 보내야 한다.
 - agent: Envoy, Flask, Sping 등과 같은 데이터 소스가 데이터를 전송하기 위한 중간 서버
 
-
 **Jaeger Architecture**
 
 1. All In One Docker Image로 Jaeger 사용
@@ -219,7 +223,6 @@ Find Traces의 Service를 `productpage.default` 선택
 이 경우에는 Jaeger의 데이터를 저장할 백엔드 스토리지를 local storage를 사용할 수 있어 간편하게 사용할 수 있으며, 애플리케이션 서버가 바라보는 Jaeger엔드포인트가 all in one 하나로 고정된다는 장점이 있다. 하지만 경우에 따라 SPOF가 될 수 있다.
 
 ![Jaeger](./img/19_7.png)
-
 
 2. collector + query + agent 방식의 Jaeger
 
@@ -235,13 +238,13 @@ Kiali는 웹 대시보드 형태로 Istio 정책을 제어하고 Istio 동작을
 
 ### Kiali Install
 
-``` bash
+```bash
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.17/samples/addons/kiali.yaml
 
 kubectl patch svc kiali -n istio-system -p '{"spec": {"type": "NodePort"}}'
 ```
 
-``` bash
+```bash
 while true;do curl http://192.168.100.100:30241/productpage; done
 ```
 
@@ -261,7 +264,7 @@ Istio workshop 내의 Web demo 애플리케이션이다.
 
 ![Hipster](./img/19_11.png)
 
-``` bash
+```bash
 kubectl create ns hipster-app
 
 # Kubernetes context를 생성된 NS로 설정
@@ -274,7 +277,7 @@ kubectl config set-context --current --namespace=hipster-app
 > sudo ln -s /opt/kubectx/kubectx /usr/local/bin/kubectx
 > sudo ln -s /opt/kubectx/kubens /usr/local/bin/kubens
 
-``` bash
+```bash
 # microservices-demo/release/kubernetes-manifests.yaml
 kubectl apply -f kubernetes-manifests.yaml
 
@@ -291,7 +294,7 @@ Mutating Admission Webhook을 통한 자동 사이트가 삽입, namespace가 `i
 
 deployment에 사이드카 추가
 
-``` bash
+```bash
 istioctl kube-inject -f deployment.yaml
 ```
 
@@ -299,14 +302,15 @@ istioctl kube-inject -f deployment.yaml
 
 특정 서비스에 대해서만 Mesh를 활성화하고, Istio와의 호환성 테스트를 시작하는 경우에 유용
 
-``` bash
+```bash
 istioctl experimental add-to-mesh service [flags]
 ```
 
 ### Hipster Application에 Istio 활성화
 
 Envoy Proxy 삽입
-``` bash
+
+```bash
 kubectl apply -f <(istioctl kube-inject -f hipster-app.yaml)
 ```
 
@@ -328,7 +332,7 @@ Kubernetes Ingress와 달리 Istio Ingress는 트래픽 라우팅 구성이 포�
 
 > 현재는 VM 환경에서 MetalLB로 구성
 
-``` bash
+```bash
 vagrant@k8s-node1 > ~ > kubectl get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}' -n istio-system
 192.168.100.241
 
@@ -342,7 +346,7 @@ curl: (7) Failed to connect to 192.168.100.241 port 80: Connection refused
 
 > VM 환경이기에, `/etc/hosts` 내 `192.168.100.241 jeonj.io`를 추가함
 
-``` bash
+```bash
 kubectl apply -f frontend-ingress.yaml
 
  vagrant@k8s-node1 > ~/istio/istio-workshop-labs >  master ± > kubectl get virtualservice,gateway
@@ -362,7 +366,7 @@ gateway.networking.istio.io/app-gateway   36s
 
 Istio addon에 대한 Gateway 및 Kiali, Jaeger를 위한 VirtualService 배포
 
-``` yaml
+```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
@@ -371,12 +375,12 @@ spec:
   selector:
     istio: ingressgateway # use istio default controller
   servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "dashboard.test01-jeonj.io"
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "dashboard.test01-jeonj.io"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -384,18 +388,18 @@ metadata:
   name: kiali
 spec:
   hosts:
-  - "dashboard.test01-jeonj.io"
+    - "dashboard.test01-jeonj.io"
   gateways:
-  - addons-gateway
+    - addons-gateway
   http:
-  - match:
-    - uri:
-        prefix: /kiali
-    route:
-    - destination:
-        host: kiali
-        port:
-          number: 20001
+    - match:
+        - uri:
+            prefix: /kiali
+      route:
+        - destination:
+            host: kiali
+            port:
+              number: 20001
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -403,18 +407,18 @@ metadata:
   name: tracing
 spec:
   hosts:
-  - "dashboard.test01-jeonj.io"
+    - "dashboard.test01-jeonj.io"
   gateways:
-  - addons-gateway
+    - addons-gateway
   http:
-  - match:
-    - uri:
-        prefix: /jaeger
-    route:
-    - destination:
-        host: tracing
-        port:
-          number: 80
+    - match:
+        - uri:
+            prefix: /jaeger
+      route:
+        - destination:
+            host: tracing
+            port:
+              number: 80
 ```
 
 ### Traffic Splitting
@@ -424,9 +428,9 @@ spec:
 - **VirtualService**: 호스트 주소가 지정될 떄 적용할 트래픽 라우팅 규칙 집합 정의
 - **DestinationRule**: 라우팅이 발생한 후 서비스에 대한 트래픽에 적용되는 정책 정의
 
-
 **VirtualService**
-``` yaml
+
+```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
@@ -447,7 +451,8 @@ spec:
 ```
 
 **DestinationRule**
-``` yaml
+
+```yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
@@ -463,32 +468,33 @@ spec:
         version: "1.1"
 ```
 
-``` bash
+```bash
 kubectl apply -f <(istioctl kube-inject -f frontend-0.1.3.yaml)
 ```
 
 `VirtualService`
-``` yaml
-  http:
+
+```yaml
+http:
   - match:
-    - uri:
-        prefix: /
+      - uri:
+          prefix: /
     route:
-    - destination:
-        host: frontend
-        port:
-          number: 80
-        subset: v1
-      weight: 80
-    - destination:
-        host: frontend
-        port:
-          number: 80
-        subset: v2
-      weight: 20
+      - destination:
+          host: frontend
+          port:
+            number: 80
+          subset: v1
+        weight: 80
+      - destination:
+          host: frontend
+          port:
+            number: 80
+          subset: v2
+        weight: 20
 ```
 
-``` bash
+```bash
 kubectl apply -f frontend-virtualservice.yaml
 kubectl apply -f frontend-destinationrule.yaml
 ```
