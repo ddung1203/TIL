@@ -30,9 +30,17 @@ Headless 서비스를 이용하면 `Service` 가 로드 밸런서의 역할도 �
 만약 셀렉터가 없는 경우 엔드포인트가 만들어지지 않는다.
 단, 셀렉터가 없더라도 DNS 시스템에는 ExternalName 타입의 서비스에서 사용할 CNAME 레코드가 생성된다.
 
+> ClusterIP, NodePort, LoadBalancer와 같은 다른 타입의 서비스는 클라이언트가 Pod에 접근하기 위해 kube-proxy로 접근한 후 프록시되어 Pod에 액세스하게 된다. 프록시로 접근하는 경우, 현재 연결된 Pod와 다음번에 연결될 Pod가 같다는 보장을 할 수 없기 때문에, Stateful한 애플리케이션에 적합하지 않다.
+
+> StatefulSet은 Pod를 생성할 때 순차적으로 기동되고, 삭제할때도 순차적으로 삭제한다. 그런데 만약 그런 요건이 필요없이 전체가 같이 기동되도 된다면 `.spec.pod.ManagementPolicy`를 통해서 설정할 수 있다. `.spec.podManagementPloicy`는 디폴트로 `Ordered Ready` 설정이 되어 있고, Pod가 순차적으로 기동되도록 설정이 되어 있고, 병렬로 동시에 모든 Pod를 기동하고자 하면 `Parallel`을 사용하면 된다.
+
+> **개별 Pod에 대한 디스크 볼륨 관리**
+>
+> StatefulSet의 경우 PVC를 템플릿 형태로 정의하여, Pod 마다 각각 PVC와 PV를 생성하여 관리할 수 있도록 한다. 따라서, `.spec.accessModes` 또한 `ReadWriteOnce`로 설정하도록 한다.
+
 `myweb-svc.yaml`
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -48,7 +56,7 @@ spec:
 
 `myweb-svc-headless.yaml`
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -64,7 +72,8 @@ spec:
 ```
 
 `myweb-rs.yaml`
-``` yaml
+
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -91,7 +100,7 @@ spec:
 
 하기와 같이 `myweb-svc`에 DNS 질의를 하면 ClusterIP 주소를 응답한다.
 
-``` bash
+```bash
 kubectl run nettool -it --image ghcr.io/c1t1d0s7/network-multitool --rm
 
 > host myweb-svc
@@ -107,7 +116,6 @@ Headless service에 DNS를 질의를 했을 때 응답되는 IP는 Pod의 IP이�
 Service의 자체 IP가 없는 것을 Headless servcie 라고 하며 Headless service를 질의하면 `myweb-svc-headless.default.svc.cluster.local` SVC의 ip가 응답하게 된다.
 
 파드가 3개이기 때문에 3개의 endpoint 주소를 응답한다.
-
 
 ## StatefulSet
 
@@ -126,7 +134,7 @@ StatefulSet은 다음 중 하나 또는 이상이 필요한 애플리케이션�
 
 `myweb-svc-headless.yaml`
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -143,7 +151,7 @@ spec:
 
 `myweb-sts.yaml`
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -169,7 +177,7 @@ spec:
               protocol: TCP
 ```
 
-``` bash
+```bash
 kubectl run nettool -it --image ghcr.io/c1t1d0s7/network-multitool --rm
 
 > host myweb-svc-headless
@@ -188,13 +196,11 @@ kubectl run nettool -it --image ghcr.io/c1t1d0s7/network-multitool --rm
 
 StatefulSet은 파드 집합의 배포와 스케일링을 관리하며, 파드들의 순서 및 고유성을 보장한다.
 
-
-
 ### 에제 2. PVC 템플릿
 
 `myweb-sts-vol.yaml`
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
