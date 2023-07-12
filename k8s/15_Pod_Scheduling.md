@@ -12,7 +12,7 @@ https://kubernetes.io/ko/docs/concepts/scheduling-eviction/assign-pod-node/
 
 nodeName의 경우 kube-scheduler의 영향을 받지 않고 특정 노드에 강제로 배치할 수 있다.
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -36,13 +36,12 @@ spec:
 ## nodeSelector
 
 필요한 특정 구성이 있는 경우 특정 노드 그룹을 만들어서 배치시킬 수 있다.
-노드에 레이블을 적절하게 붙여서 특정 Pod를 원하는 위치에만 배치시킬 수 있다. 
-
+노드에 레이블을 적절하게 붙여서 특정 Pod를 원하는 위치에만 배치시킬 수 있다.
 
 노드 레이블 확인
 
-``` bash
- vagrant@k8s-node1  ~/configure  kubectl get nodes --show-labels
+```bash
+ vagrant@k8s-node1 > ~/configure > kubectl get nodes --show-labels
 ```
 
 노드 레이블 node1
@@ -59,6 +58,7 @@ node.kubernetes.io/exclude-from-external-load-balancers=
 ```
 
 node2
+
 ```
 beta.kubernetes.io/arch=amd64
 beta.kubernetes.io/os=linux
@@ -68,6 +68,7 @@ kubernetes.io/os=linux
 ```
 
 node3
+
 ```
 beta.kubernetes.io/arch=amd64
 beta.kubernetes.io/os=linux
@@ -78,21 +79,21 @@ kubernetes.io/os=linux
 
 노드에 레이블 부여
 
-``` bash
+```bash
 kubectl label node node1 gpu=highend
 kubectl label node node2 gpu=midrange
 kubectl label node node3 gpu=lowend
 ```
 
-``` bash
- vagrant@k8s-node1  ~/configure  kubectl get nodes -L gpu            
+```bash
+ vagrant@k8s-node1 > ~/configure > kubectl get nodes -L gpu
 NAME    STATUS   ROLES           AGE   VERSION   GPU
 node1   Ready    control-plane   22h   v1.24.6   highend
 node2   Ready    <none>          22h   v1.24.6   midrange
 node3   Ready    <none>          22h   v1.24.6   lowend
 ```
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -129,7 +130,6 @@ RS에 의해 만들어진 Web Pod에는 app: web, STS에 의해 만들어진 DB 
 여기서 web Pod에서 affinity를 설정하는데 셀렉터를 이용해 app : db 레이블이 붙은 Pod와 친하다고 선언한다.
 그러면 web Pod 입장에서 항상 DB Pod를 셀렉팅하는 것이기 때문에 web Pod와 DB Pod 쌍은 항상 같은 노드에 배치된다.
 
-
 물론 여기서 또 worst 상황이 발생할 수도 있다. 모든 web Pod와 DB Pod 쌍이 하나의 노드에만 배치되는 상황이다.
 
 이때 봐야하는 것이 podAntiAffinity이다.
@@ -138,6 +138,8 @@ RS에 의해 만들어진 Web Pod에는 app: web, STS에 의해 만들어진 DB 
 
 즉, 같은 RS에 의해 생성된 web Pod들은 서로를 anti하고 같은 STS에 의해 생성된 DB Pod들도 서로를 anti해야 한다. 그리고 web Pod와 DB Pod는 affinity 해야 한다. 그러면 web Pod, DB Pod 쌍이 하나씩 노드에 배치되며 각 쌍은 서로를 배척하게 된다.
 
++) 노드의 레이블이 변경되면 Affinity 및 Anti-Affinity 규칙은 이미 실행중인 Pod에 적용되지 않는다.
+
 - affinity
   - pod
   - node
@@ -145,7 +147,8 @@ RS에 의해 만들어진 Web Pod에는 app: web, STS에 의해 만들어진 DB 
   - pod
 
 `myweb-a.yaml`
-``` yaml
+
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -163,7 +166,7 @@ spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          # 만족하면 좋은 조건
+            # 만족하면 좋은 조건
             - weight: 10
               preference:
                 matchExpressions:
@@ -171,7 +174,7 @@ spec:
                     operator: Exists
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          # 꼭 필요한 조건
+            # 꼭 필요한 조건
             - labelSelector:
                 matchLabels:
                   app: a # Pod 간 anti
@@ -182,7 +185,8 @@ spec:
 ```
 
 `myweb-b.yaml`
-``` yaml
+
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -200,7 +204,7 @@ spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          # 만족하면 좋은 조건
+            # 만족하면 좋은 조건
             - weight: 10
               preference:
                 matchExpressions:
@@ -208,7 +212,7 @@ spec:
                     operator: Exists
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          # 꼭 필요한 조건
+            # 꼭 필요한 조건
             - labelSelector:
                 matchLabels:
                   app: b # 자기 자신과는 anti
@@ -226,26 +230,25 @@ spec:
 
 - `nodeAffinity` : Pod에 대한 노드 어피니티 스케줄링 규칙
 - `podAffinity` : Pod 선호도 스케줄링 규칙
-- `podAntiAffinity` : Pod의 반선호도 스케줄링 규칙
-
+- `podAntiAffinity` : Pod의 반선호도 스케줄링 규칙 - 노드 자체의 라벨이 아닌, 노드에서 이미 실행 중인 Pod 라벨을 기반으로 하는 규칙 포함. 다른 Pod와 동일한 노드에 예약되지 않아야 하는 Pod를 구성할 수 있다.
 
 ## Cordon & Drain
 
 Cordon : 스케줄링 금지
 
-``` bash
+```bash
 kubectl cordon <NODENAME>
 ```
 
 스케줄링 허용
 
-``` bash
+```bash
 kubectl uncordon <NODENAME>
 ```
 
 Drain : Cordon -> 기존 Pod를 제거
 
-``` bash
+```bash
 kubectl drain <NODENAME> --ignore-daemonsets
 ```
 
@@ -261,14 +264,13 @@ kubectl drain <NODENAME> --ignore-daemonsets
 
 Control Plane Taint : "node-role.kubernetes.io/master:NoSchedule"
 
-Taint(더러움) : 특정 노드에 역할을 부여
-Toleration(관용) : Taint 노드에 스케줄링 허용
+Taint : Pod가 특정 노드에 예약되는 것을 방지
+Toleration : Taint 노드에 스케줄링 허용
 
 Taint를 설정한 노드에는 Pod들이 스케줄링 되지 않는다. Taint가 걸린 Node에 Pod들을 스케줄링 하려면 Toleration을 이용해서 지정해 주어야한다.
 Taint는 Cordon이나 Drain처럼 모든 Pod가 스케줄링 되지 않게 막는것이 아니고, Toleration을 이용한 특정 Pod들만 실행하게 하고 다른 Pod들은 들어오지 못하게 하는 역할을 한다.
 
-
-``` bash
+```bash
 kubectl taint node node1 node-role.kubernetes.io/master:NoSchedule
 ```
 
@@ -281,7 +283,7 @@ kubectl taint node node1 node-role.kubernetes.io/master:NoSchedule
 
 `myweb-a.yaml`
 
-``` yaml
+```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -303,7 +305,7 @@ spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          # 만족하면 좋은 조건
+            # 만족하면 좋은 조건
             - weight: 10
               preference:
                 matchExpressions:
@@ -311,7 +313,7 @@ spec:
                     operator: Exists
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          # 꼭 필요한 조건
+            # 꼭 필요한 조건
             - labelSelector:
                 matchLabels:
                   app: a
@@ -321,18 +323,18 @@ spec:
           image: ghcr.io/c1t1d0s7/go-myweb
 ```
 
-``` bash
+```bash
 kubectl cordon node2
 ```
 
-``` bash
+```bash
 kubectl describe nodes | grep -i taint
 ```
 
-``` bash
+```bash
 kubectl uncordon node2
 ```
 
-``` bash
+```bash
 kubectl describe nodes | grep -i taint
 ```
