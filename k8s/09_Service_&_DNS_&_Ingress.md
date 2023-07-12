@@ -478,6 +478,8 @@ Network Policy를 사용하면 해당 경로에 대해서만 네트워크 트래
 [Istio 참고](./19_Istio.md)
 [Istio 적용 프로젝트](https://github.com/ddung1203/python-microservices#python-microservices-web-app---django-flask-react-devops)
 
+> 클러스터에서 Network Policy를 활성화하고, 모든 노드를 재부팅해야 클러스터에서 Network Policy를 활성화할 수 있다.
+
 ### 실습
 
 #### Ingress 검증
