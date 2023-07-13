@@ -1,9 +1,10 @@
 # RBAC : Role Based Access Control
 
+RBAC은 역할 및 역할 바인딩을 정의하여 Kubernetes 네임스페이스 리소스에 대한 액세스 관리를 할 수 있다. Cluster Role 및 Role Binding을 정의하여 클러스터 범위 내의 리소스를 관리할 수 있다. 여기에는 NS 간에 역할을 공유하고 모든 NS에 권한을 부여하는 것이 포함된다.
+
 RBAC를 기반으로 하는 Service Account는 사용자 또는 애플리케이션 하나에 해당하며, RBAC라는 기능을 통해 특정 명령을 실행할 수 있는 권한을 Service Account에 부여한다. 권한을 부여받은 Service Account는 해당 권한에 해당하는 기능만 사용할 수 있다.
 
-간단히 생각해서 Linux의 root와 일반 user를 나누는 기능을 K8s에서도 유사하게 사용할 수 있다고 생각하면 된다. 지금까지의 `kubectl` 명령어를 사용해와던 권한은 root에 해당하는 권한을 가지고 있다. 
-
+간단히 생각해서 Linux의 root와 일반 user를 나누는 기능을 K8s에서도 유사하게 사용할 수 있다고 생각하면 된다. 지금까지의 `kubectl` 명령어를 사용해와던 권한은 root에 해당하는 권한을 가지고 있다.
 
 우리가 `kubectl` 명령을 사용 시 하기와 같은 절차가 실행된다.
 
@@ -17,33 +18,33 @@ RBAC를 기반으로 하는 Service Account는 사용자 또는 애플리케이�
 
 `~/.kube/config`: Kubernetes 설정 파일
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: Config
 preferences: {}
 clusters:
-- name: cluster.local
-  cluster:
-    certificate-authority-data: LS0tLS1...
-    server: https://127.0.0.1:6443
-- name: mycluster
-  cluster:
-    server: https://1.2.3.4:6443
+  - name: cluster.local
+    cluster:
+      certificate-authority-data: LS0tLS1...
+      server: https://127.0.0.1:6443
+  - name: mycluster
+    cluster:
+      server: https://1.2.3.4:6443
 users:
-- name: myadmin
-- name: kubernetes-admin
-  user:
-    client-certificate-data: LS0tLS1...
-    client-key-data: LS0tLS1...
+  - name: myadmin
+  - name: kubernetes-admin
+    user:
+      client-certificate-data: LS0tLS1...
+      client-key-data: LS0tLS1...
 contexts:
-- context:
-    cluster: mycluster
-    user: myadmin
-  name: myadmin@mycluster
-- context:
-    cluster: cluster.local
-    user: kubernetes-admin
-  name: kubernetes-admin@cluster.local
+  - context:
+      cluster: mycluster
+      user: myadmin
+    name: myadmin@mycluster
+  - context:
+      cluster: cluster.local
+      user: kubernetes-admin
+    name: kubernetes-admin@cluster.local
 current-context: kubernetes-admin@cluster.local
 ```
 
@@ -59,48 +60,47 @@ current-context: kubernetes-admin@cluster.local
 
 `~/.kube/config` 파일을 수정해서 새로운 cluster와 context를 추가 후 하기 명령어를 실행한다.
 
-``` yaml
+```yaml
 apiVersion: v1
 clusters:
-- cluster:
-    certificate-authority-data: ==
-    server: https://127.0.0.1:6443
-  name: cluster.local
-- clusters:
-    server: https://1.1.1.1
-  name: jeonj-cluster
+  - cluster:
+      certificate-authority-data: ==
+      server: https://127.0.0.1:6443
+    name: cluster.local
+  - clusters:
+      server: https://1.1.1.1
+    name: jeonj-cluster
 contexts:
-- context:
-    cluster: cluster.local
-    user: kubernetes-admin
-  name: kubernetes-admin@cluster.local
-- context:
-    cluster: jeonj-cluster
-    user: jeonj
-  name: jeonj@jeonj-cluster
+  - context:
+      cluster: cluster.local
+      user: kubernetes-admin
+    name: kubernetes-admin@cluster.local
+  - context:
+      cluster: jeonj-cluster
+      user: jeonj
+    name: jeonj@jeonj-cluster
 current-context: kubernetes-admin@cluster.local
 kind: Config
 preferences: {}
 users:
-- name: jeonj
-- name: kubernetes-admin
-  user:
-    client-certificate-data: ==
-    client-key-data:  ==
-
+  - name: jeonj
+  - name: kubernetes-admin
+    user:
+      client-certificate-data: ==
+      client-key-data: ==
 ```
 
-``` bash
+```bash
 kubectl config view
 ```
 
-``` bash
+```bash
 kubectl config get-clusters
 kubectl config get-contexts
 kubectl config get-users
 ```
 
-``` bash
+```bash
 kubectl config use-context jeonj@jeonj-cluster
 ```
 
@@ -116,15 +116,16 @@ Kubernetes는 자체적으로 사용자 계정을 관리하고 이를 인증하�
 
 **서비스 어카운트**
 
-클라이언트가 Kubernetes API를 호출하거나, 콘솔이나 기타 클라이언트가 Kubernetes API를 접근하고자 할 때, 실제 사용자가 아닌 시스템이 된다. 따라서 Kubernetes에서는 이를 사용자와 분리해서 관리하는데 이를 서비스 어카운트라고 한다. 
+클라이언트가 Kubernetes API를 호출하거나, 콘솔이나 기타 클라이언트가 Kubernetes API를 접근하고자 할 때, 실제 사용자가 아닌 시스템이 된다. 따라서 Kubernetes에서는 이를 사용자와 분리해서 관리하는데 이를 서비스 어카운트라고 한다.
 
-``` bash
+```bash
 kubectl create sa foo
 ```
 
 하기와 같이 쉽게 정리가 가능하다.
 
 - User Account(Normal User) : 일반 사용자(쿠버네티스가 관리 X)
+
   - 사용자 O
   - Pod 사용 X
 
@@ -133,6 +134,7 @@ kubectl create sa foo
   - Pod 사용
 
 **인증 방법**
+
 - x509 인증서
 - 토큰
   - Bearer Token
@@ -146,13 +148,14 @@ kubectl create sa foo
     - OAuth2 Provider
 
 ## RBAC
+
 - Role : 권한(NS)
 - ClusterRole : 권한(Global)
 - RoleBinding
   - Role <-> RoleBinding <-> SA/User
 - ClusterRoleBinding
   - ClusterRole <-> ClusterRoleBinding <-> SA/User
-> https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+    > https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 
 ## 권한 관리(Authorization)
 
@@ -165,43 +168,45 @@ kubectl create sa foo
 
 ### Role
 
-``` yaml
+rules에는 사용자가 어떤 권한을 사용할 수 있는지를 설정한다.
+Pods 리소스에 대해서 get, watch, list를 할 수 있다는 것이다. rules와 verbs는 리스트이므로 여러개를 지정할 수 있다.
+
+> `apiGroups`: API 그룹은 비워 두었는데 역할이 핵심 API 그룹에 적용됨을 나타낸다.
+
+```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: default
   name: pod-reader
 rules:
-- apiGroups: [""] # "" indicates the core API group
-  resources: ["pods"]
-  verbs: ["get", "watch", "list"]
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["pods"]
+    verbs: ["get", "watch", "list"]
 ```
-
-rules에는 사용자가 어떤 권한을 사용할 수 있는지를 설정한다.
-Pods 리소스에 대해서 get, watch, list를 할 수 있다는 것이다. rules와 verbs는 리스트이므로 여러개를 지정할 수 있다.
 
 ### RoleBinding
 
-다음은 상기의 Role을 사용자에게 부여하기 위해서 RoleBinding 설정을 하기와 같이 정의한다. 
+다음은 상기의 Role을 사용자에게 부여하기 위해서 RoleBinding 설정을 하기와 같이 정의한다.
 
-``` yaml
+```yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   namespace: default
   name: read-pods
 subjects:
-- kind: User
-  name: jeon
-  apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: jeon
+    apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: Role
   name: pod-reader
   apiGroup: rbac.authorization.k8s.io
 ```
 
-
 #### 요청 동사
+
 - create
   - `kubectl create`, `kubectl apply`
 - get
@@ -219,7 +224,7 @@ roleRef:
 - deletecollection
   - `kubectl delete po --all`
 
-``` bash
+```bash
  vagrant@k8s-node1 > ~ > kubectl get po -v=7
 I0408 00:08:14.717424   13976 loader.go:372] Config loaded from file:  /home/vagrant/.kube/config
 I0408 00:08:14.760262   13976 round_trippers.go:463] GET https://127.0.0.1:6443/api/v1/namespaces/default/pods?limit=500
@@ -228,24 +233,26 @@ I0408 00:08:14.760492   13976 round_trippers.go:473]     Accept: application/jso
 I0408 00:08:14.760566   13976 round_trippers.go:473]     User-Agent: kubectl/v1.24.6 (linux/amd64) kubernetes/b39bf14
 I0408 00:08:14.801163   13976 round_trippers.go:574] Response Status: 200 OK in 40 milliseconds
 ```
-`-v`: 상세정보를 보는 옵션으로, 0~9 값을 지정한다(0<9).
 
+`-v`: 상세정보를 보는 옵션으로, 0~9 값을 지정한다(0<9).
 
 ### ClusterRole
 
-``` yaml
+ClusterRole은 클러스터 수준에서 권한을 부여하므로 NS를 지정할 필요가 없다.
+
+```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   # "namespace" omitted since ClusterRoles are not namespaced
   name: secret-reader
 rules:
-- apiGroups: [""]
-  #
-  # at the HTTP level, the name of the resource for accessing Secret
-  # objects is "secrets"
-  resources: ["secrets"]
-  verbs: ["get", "watch", "list"]
+  - apiGroups: [""]
+    #
+    # at the HTTP level, the name of the resource for accessing Secret
+    # objects is "secrets"
+    resources: ["secrets"]
+    verbs: ["get", "watch", "list"]
 ```
 
 - view : 읽을 수 있는 권한
@@ -255,7 +262,7 @@ rules:
 
 **Role vs. ClusterRole**
 
-Role은 적용 범위에 따라 Cluster Role과 일반 Role로 분리 된다. Role의 경우 특정 네임스페이스내의 리소스에 대한 권한을 정의할 수 있다. 
+Role은 적용 범위에 따라 Cluster Role과 일반 Role로 분리 된다. Role의 경우 특정 네임스페이스내의 리소스에 대한 권한을 정의할 수 있다.
 
 반면 ClusterRole의 경우, Cluster 전체에 걸쳐서 권한을 정의할 수 있다는 차이가 있다. 또한 ClusterRole의 경우에는 여러 네임스페이스에 걸쳐 있는 nodes 와 같은 리소스스나 /heathz와 같이 리소스 타입이 아닌 자원에 대해서도 권한을 정의할 수 있다.
 
@@ -263,88 +270,97 @@ Role과 ClusterRole은 각각 RoleBinding과 ClusterRoleBinding 을 통해서 �
 
 ## SA
 
-``` bash
+```bash
 kubectl create sa <NAME>
 ```
 
 ## 사용자 생성을 위한 x509 인증서
+
 Private Key
-``` bash
+
+```bash
 openssl genrsa -out myuser.key 2048
 ```
 
 x509 인증서 요청 생성
-``` bash
+
+```bash
 openssl req -new -key myuser.key -out myuser.csr -subj "/CN=myuser"
 ```
 
-``` bash
+```bash
 cat myuser.csr | base64 | tr -d "\n"
 ```
 
 `csr.yaml`
-``` yaml
+
+```yaml
 apiVersion: certificates.k8s.io/v1
 kind: CertificateSigningRequest
 metadata:
   name: myuser-csr
 spec:
   usages:
-  - client auth
+    - client auth
   signerName: kubernetes.io/kube-apiserver-client
   request: LS0tLS1CRUdJTiB
 ```
 
-``` bash
+```bash
 kubectl create -f csr.yaml
 ```
 
-``` bash
+```bash
 kubectl get csr
 ```
 
 상태 : Pending
-``` bash
+
+```bash
 kubectl certificate approve myuser-csr
 ```
 
-``` bash
+```bash
 kubectl get csr
 ```
 
 상태 : Approved, Issued
-``` bash
+
+```bash
 kubectl get csr myuser-csr -o yaml
 ```
 
 status.certificates
-``` bash
+
+```bash
 kubectl get csr myuser-csr -o jsonpath='{.status.certificate}' | base64 -d > myuser.crt
 ```
 
 Kubeconfig 사용자 생성
 
-``` bash
+```bash
 kubectl config set-credentials myuser --client-certificate=myuser.crt --client-key=myuser.key --embed-certs=true
 ```
 
 Kubeconfig 컨텍스트 생성
-``` bash
+
+```bash
 kubectl config set-context myuser@cluster.local --cluster=cluster.local --user=myuser --namespace=default
 ```
 
-``` bash
+```bash
 kubectl config get-users
 kubectl config get-clusters
 kubectl config get-contexts
 ```
 
-``` bash
+```bash
 kubectl config use-context myuser@cluster.local
 ```
 
 클러스터 롤 바인딩 생성
-``` yaml
+
+```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -360,7 +376,8 @@ subjects:
 ```
 
 `nfs-subdir-external-provisioner/deploy/rbac.yaml`
-``` yaml
+
+```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -384,9 +401,10 @@ rules:
     # nfs가 pv를 만들어주기 때문
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
-    verbs: ["get", "list", "watch", "update"]
-     # pvc는 우리가 만들지만 pv를 만들어서 pv와 pvc를 연결시켜줘야 하는데 pvc에는 pv에 대한 정보가 있어야 하고 pvc에서 pv에 대한 정보를 업데이트 할 수 있어야 한다.
-     # pv는 pvc를 가리켜야 한다. pv에 이름을 지정하거나 셀렉터로 지정하거나 결과적으로 pv를 셀렉팅할 수 있어야 하기 때문에 pvc를 업데이트할 수 있어야 한다.    
+    verbs:
+      ["get", "list", "watch", "update"]
+      # pvc는 우리가 만들지만 pv를 만들어서 pv와 pvc를 연결시켜줘야 하는데 pvc에는 pv에 대한 정보가 있어야 하고 pvc에서 pv에 대한 정보를 업데이트 할 수 있어야 한다.
+      # pv는 pvc를 가리켜야 한다. pv에 이름을 지정하거나 셀렉터로 지정하거나 결과적으로 pv를 셀렉팅할 수 있어야 하기 때문에 pvc를 업데이트할 수 있어야 한다.
   - apiGroups: ["storage.k8s.io"]
     resources: ["storageclasses"]
     verbs: ["get", "list", "watch"]
@@ -445,7 +463,7 @@ Kubeadm의 경우 Kubernetes의 마스터 IP와 6443 포트로 접근한다면 A
 
 따라서, 하기의 script로 API 요청을 보내면 정상 응답이 잔환되는 것을 확인할 수 있다.
 
-``` bash
+```bash
 export decoded_token=$(kubectl get secret jeonj-token-nrzgb -o jsonpath='{.data.token}" | base64 -d)
 
 curl https://localhost:6443/apis --header "Authorization: Bearer $decoded_token" -k
@@ -455,7 +473,7 @@ curl https://localhost:6443/apis --header "Authorization: Bearer $decoded_token"
 
 예를 들어 `/api/v1/namespaces/default/services` 경로로 요청을 보내면 default 네임스페이스에 존재하는 서비스의 목록을 가져올 수 있다. 상기 script는 `kubectl get services -n default`와 동일한 기능을 한다.
 
-``` bash
+```bash
 curl https://localhost:6443/api/v1/namespaces/default/services \
 -k --header "Authorization: Bearer $decoded_token"
 ```
@@ -464,23 +482,22 @@ curl https://localhost:6443/api/v1/namespaces/default/services \
 
 또한 API 서버에 접근하기 위해서 HTTP 요청으로 REST API를 사용해도 되지만, Pod 내부에서 실행되는 애플리케이션이라면 Kubernetes SDK를 활용하는 방식을 사용하도록 한다.
 
-
 [Client Libraries](https://kubernetes.io/docs/reference/using-api/client-libraries/)
 
 ## Service Account에 Image Registry 접근을 위한 Secret 설정
 
-Service Account를 이용하면 private registry 접근을 위한 Secret을 Service Account 자체에 설정할 수 있다. 즉, Deployment나 Pod의 yaml 파일마다 docker registry 타입의 secret을 정의하지 않아도 된다. 
+Service Account를 이용하면 private registry 접근을 위한 Secret을 Service Account 자체에 설정할 수 있다. 즉, Deployment나 Pod의 yaml 파일마다 docker registry 타입의 secret을 정의하지 않아도 된다.
 
-``` yaml
+```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: reg-auth-jeonj
   namespace: default
 imagePullSecrets:
-- name: registry-auth
+  - name: registry-auth
 ```
 
-앞으로 Pod를 생성하는 yaml 파일에서 serviceAccountName 항목에 reg-auth-jeonj Service Account를 지정해 생성하면 자동으로 imagePullSecrets 항목이 Pod `spec`에 추가된다. 
+앞으로 Pod를 생성하는 yaml 파일에서 serviceAccountName 항목에 reg-auth-jeonj Service Account를 지정해 생성하면 자동으로 imagePullSecrets 항목이 Pod `spec`에 추가된다.
 
 [조대협의 블로그](https://bcho.tistory.com/1272)의 `보안 1/4 - 사용자 계정 인증 및 권한 인가` 부분 참고하여 작성
