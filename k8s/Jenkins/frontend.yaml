@@ -1,0 +1,59 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: gceme-frontend-production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gceme
+      role: frontend
+      env: production
+  template:
+    metadata:
+      name: frontend
+      labels:
+        app: gceme
+        role: frontend
+        env: production
+    spec:
+      containers:
+        - name: frontend
+          image: corelab/gceme:1.0.0
+          resources:
+            limits:
+              memory: "500Mi"
+              cpu: "100m"
+          imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+          command:
+            [
+              "sh",
+              "-c",
+              "app -frontend=true -backend-service=http://gceme-backend:8080 -port=80",
+            ]
+          ports:
+            - name: frontend
+              containerPort: 80
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: gceme-frontend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: gceme
+    role: frontend

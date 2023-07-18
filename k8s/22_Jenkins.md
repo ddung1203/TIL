@@ -32,6 +32,10 @@ printf $(kubectl get secret cd-jenkins -o jsonpath="{.data.jenkins-admin-passwor
 
 ## Sample 앱 배포
 
+```bash
+kubectl apply -f . -n production
+```
+
 `backend.yaml`
 
 ```yaml
@@ -144,4 +148,10 @@ spec:
   selector:
     app: gceme
     role: frontend
+```
+
+정상적으로 배포 시 서비스의 버전을 확인한다.
+
+```bash
+curl http://<EXTERNAL-IP>/version
 ```
