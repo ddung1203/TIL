@@ -21,7 +21,7 @@ helm repo update
 ## Jenkins 구성 및 설치
 
 ```bash
-helm install cd jenkins/jenkins -f jenkins/values.yaml --wait
+helm install cd jenkins/jenkins --wait
 ```
 
 Jenkins 차트에서는 자동으로 admin password를 만들어 준다.
