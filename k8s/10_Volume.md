@@ -263,7 +263,7 @@ NFS의 경우 노드가 3개 있고 nfs volume을 공유할 때 파드를 생성
 ```
 /nfsvolume 192.168.100.0/24(rw,sync,no_subtree_check,no_root_squash)
 ```
-`` bash
+``` bash
 sudo systemctl restart nfs-kernel-server
 systemctl status nfs-kernel-server
 ```
