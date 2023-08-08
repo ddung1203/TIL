@@ -180,9 +180,32 @@ token:      <TOKEN>
 kubectl get secret/sa-dev-token -n dev -o jsonpath="{.data['ca\.crt']}"
 ```
 
+상기 추출된 `token`과 `ca.crt` 값을 기준으로 kubeconfig를 작성한다.
+
+```yaml
+apiVersion: v1
+kind: Config
+clusters:
+  - name: default-cluster
+    cluster:
+      certificate-authority-data: ${ca}
+      server: ${server}
+contexts:
+  - name: default-context
+    context:
+      cluster: default-cluster
+      namespace: ${namespace}
+      user: ${name}
+current-context: default-context
+users:
+  - name: ${name}
+    user:
+      token: ${token}
+```
+
 이제 생성된 kubeconfig를 `--kubeconfig` 혹은 `kubectx`를 사용하여 해당 namespace에서 read, write가 가능한 환경이 조성된다.
 
-````bash
+```bash
  jeonj@ubuntu > ~ > kubectl get ns --kubeconfig ./kubeconfig
-Error from server (Forbidden): namespaces is forbidden: User "system:serviceaccount:dev:sa-dev" cannot list resource "namespaces" in API group "" at the cluster scope```
-````
+Error from server (Forbidden): namespaces is forbidden: User "system:serviceaccount:dev:sa-dev" cannot list resource "namespaces" in API group "" at the cluster scope
+```
