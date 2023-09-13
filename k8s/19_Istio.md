@@ -112,6 +112,45 @@ namespace label을 추가하여 Istio에 Envoy를 자동으로 삽입
 kubectl label namespace default istio-injection=enabled
 ```
 
+## Install Using Helm
+
+Configure helm repo
+
+```bash
+helm repo add istio https://istio-release.storage.googleapis.com/charts
+helm repo add kiali https://kiali.org/helm-charts
+
+helm repo update
+```
+
+Install
+
+```bash
+helm install istio-base istio/base --set defaultRevision=default -n istio-system
+helm install istiod istio/istiod --wait -n istio-system
+helm install istio-ingress istio/gateway --wait -n istio-system
+
+helm install \
+    --set cr.create=true \
+    --set cr.namespace=istio-system \
+    --namespace kiali-operator \
+    --create-namespace \
+    kiali-operator \
+    kiali/kiali-operator
+```
+
+Kiali ServiceAccount Token
+
+```yaml
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: kiali-service-account
+  annotations:
+    kubernetes.io/service-account.name: kiali-service-account
+```
+
 ## Visualizing Metrics with Grafana
 
 서비스 mesh traffic을 확인하기 위해 Istio Dashboard를 활용한다. Grafana, Prometheus의 Addon을 설치하고, Bookinfo의 예제를 통해 확인해보겠다.
@@ -508,3 +547,4 @@ kubectl apply -f frontend-destinationrule.yaml
 ### 결론
 
 Istio는 DevOps와 SRE에 상기 Tool을 도입하여 개발팀을 대신하여 네트워크 문제를 관리함으로써 집중할 수 있도록 한다.
+
