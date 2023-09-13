@@ -548,3 +548,66 @@ kubectl apply -f frontend-destinationrule.yaml
 
 Istio는 DevOps와 SRE에 상기 Tool을 도입하여 개발팀을 대신하여 네트워크 문제를 관리함으로써 집중할 수 있도록 한다.
 
+> **Troubleshooting**
+> 
+> `Namespace` 내 `helm uninstall`로 resource를 삭제하였으나, Namespace Terminating 상태로 남아있다.
+> 
+> ```bash
+>  jeonj@ubuntu > ~ > kubectl get ns istio-system -o yaml
+> apiVersion: v1
+> kind: Namespace
+> metadata:
+>   creationTimestamp: "2023-09-11T00:38:28Z"
+>   deletionTimestamp: "2023-09-11T13:51:17Z"
+>   labels:
+>     kubernetes.io/metadata.name: istio-system
+>   name: istio-system
+>   resourceVersion: "2341141"
+>   uid: 65fbf167-fa28-42cb-b64f-96437bc09008
+> spec:
+>   finalizers:
+>   - kubernetes
+> status:
+>   conditions:
+>   - lastTransitionTime: "2023-09-13T02:54:09Z"
+>     message: All resources successfully discovered
+>     reason: ResourcesDiscovered
+>     status: "False"
+>     type: NamespaceDeletionDiscoveryFailure
+>   - lastTransitionTime: "2023-09-11T13:51:24Z"
+>     message: All legacy kube types successfully parsed
+>     reason: ParsedGroupVersions
+>     status: "False"
+>     type: NamespaceDeletionGroupVersionParsingFailure
+>   - lastTransitionTime: "2023-09-11T13:51:24Z"
+>     message: All content successfully deleted, may be waiting on finalization
+>     reason: ContentDeleted
+>     status: "False"
+>     type: NamespaceDeletionContentFailure
+>   - lastTransitionTime: "2023-09-11T13:51:24Z"
+>     message: 'Some resources are remaining: kialis.kiali.io has 1 resource instances'
+>     reason: SomeResourcesRemain
+>     status: "True"
+>     type: NamespaceContentRemaining
+>   - lastTransitionTime: "2023-09-11T13:51:24Z"
+>     message: 'Some content in the namespace has finalizers remaining: kiali.io/finalizer
+>       in 1 resource instances'
+>     reason: SomeFinalizersRemain
+>     status: "True"
+>     type: NamespaceFinalizersRemaining
+>   phase: Terminating
+> ```
+> 
+> 리소스 자체는 삭제가 되었지만 Finalizer가 특정 조건을 충족시킬때 까지 삭제를 방지하는 역할을 한다. 
+> 
+> 실제로, 공식 문서에서 이러한 문제로 [다음](https://kiali.io/docs/installation/installation-guide/install-with-helm/#known-problem-uninstall-hangs-unable-to-delete-the-kiali-cr)과 같이 나와있다.
+> 
+> 해당 오류를 찾아서 해결하면 되지만, Namespace를 삭제하는 과정에서 문제가 발생된 것이기 때문에 리소스들은 삭제 처리가되어 정상적인 방법으로 처리할 수 없다.
+> 
+> Finalizer 삭제
+> 
+> ```bash
+> kubectl patch kiali kiali -n istio-system -p '{"metadata":{"finalizers": []}}' --type=merge
+> ```
+> 
+> 이렇게 하면 Kiali CR이 강제로 삭제되고, Kiali 서버 uninstall을 건너뛴다. `kubectl api-resources --namespaced`로 확인해보면, Namespace가 삭제되었지만 남아있는 리소스를 확인할 수 있다. 따라서 이 리소스들을 삭제해야 하며, 그렇지 않으면 동일한 Namespace를 생성했을 떄 오작동의 원인이 될 수 있다.
