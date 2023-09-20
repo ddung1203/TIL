@@ -310,6 +310,7 @@ spec:
 
 ### Metallb - Addon
 
+
 `~/kubespray/inventory/mycluster/group_vars/k8s-cluster/addons.yml`
 
 ```
@@ -332,6 +333,8 @@ spec:
 ```bash
 ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b
 ```
+
+MetalLB는 외부에서 EXTERNAL-IP를 요청하면 spearker Pod가 할당된 특정 노드에서 응답한다. 해당 요청은 kube-proxy를 통해 내부의 다른 Pod로 전달한다.
 
 ### Service - ExternalName
 
@@ -939,3 +942,14 @@ watch -n1 -d kubectl get po,svc,ep
 ```bash
 kubectl exec <POD> -- touch /tmp/ready
 ```
+
+## CoreDNS와 LocalDNS
+
+해당 파드는 `kube-system`에서 확인할 수 있다.
+
+CoreDNS는 2개의 Deployment로 실행되며, LocalDNS는 DaemonSet으로 실행된다. 만약 DNS 조회 및 응답에 문제가 발생했을 떄 위 파드를 재시작하면 문제가 해결되는 경우가 있다.
+
+> [24단계 실습으로 정복하는 쿠버네티스](https://wikidocs.net/book/8945) - P.111
+
+LocalDNS는 DNS 성능 향상을 목적으로, CoreDNS의 캐시로 사용된다.
+
