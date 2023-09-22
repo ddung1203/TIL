@@ -105,3 +105,7 @@ kubectl get nodes
 ```
 kubectl get pods -A
 ```
+
+## Offline Install
+
+WIP
