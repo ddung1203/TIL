@@ -8,7 +8,7 @@
 Control Plane 1
 Work Node 3(1 Control Plan + 2 Worker Node)
 
-Control Plan : CPU : 2, Memory : 4GB
+Control Plan : CPU : 2, Memory : 4GBUbuntu 20.04|
 Worker Node : CPU : 2, Memory : 3GB
 
 
@@ -108,4 +108,63 @@ kubectl get pods -A
 
 ## Offline Install
 
-WIP
+Kubespray를 사용하여 Kubernetes 클러스터를 오프라인 환경에서 구축하는 방법
+
+> 오프라인 환경에서는 필요한 패키지 및 도구를 사전에 다운로드하고 전달하는 것이 중요하다.
+
+### Pre requirements
+
+Bastion을 제외한 서버는 외부 접근이 불가능하며, Bastion Host를 통해서 master 및 node에 접근이 가능하다.
+
+|Host|IP|Spec|OS|
+|------|---|---|---|
+|bastion|192.168.100.109, Public IP|CPU 1, MEM 1|Ubuntu 20.04|
+|master|192.168.100.110|CPU 4, MEM 6|Ubuntu 20.04|
+|node1|192.168.100.111|CPU 2, MEM 4|Ubuntu 20.04|
+|node2|192.168.100.112|CPU 2, MEM 4|Ubuntu 20.04|
+|node3|192.168.100.113|CPU 2, MEM 4|Ubuntu 20.04|
+
+### Local Mirror 구축
+
+```bash
+sudo apt install apt-mirror apache2 -y
+```
+
+`/etc/apt/mirror.list`
+```
+deb http://mirror.kakao.com/ubuntu focal main restricted
+deb http://mirror.kakao.com/ubuntu focal-updates main restricted
+deb http://mirror.kakao.com/ubuntu focal universe
+deb http://mirror.kakao.com/ubuntu focal-updates universe
+deb http://mirror.kakao.com/ubuntu focal multiverse
+deb http://mirror.kakao.com/ubuntu focal-updates multiverse
+deb http://mirror.kakao.com/ubuntu focal-backports main restricted universe multiverse
+deb http://mirror.kakao.com/ubuntu focal-security main restricted
+deb http://mirror.kakao.com/ubuntu focal-security universe
+deb http://mirror.kakao.com/ubuntu focal-security multiverse
+```
+
+```bash
+sudo apt-mirror
+```
+
+```bash
+ln -s /var/spool/apt-mirror/mirror/kr.archive.ubuntu.com/ubuntu/ /var/www/html/ubuntu
+service apache2 restart
+```
+
+`/etc/apt/sources.list`
+```
+deb http://192.168.100.109/ubuntu focal main restricted
+deb http://192.168.100.109/ubuntu focal-updates main restricted
+deb http://192.168.100.109/ubuntu focal universe
+deb http://192.168.100.109/ubuntu focal-updates universe
+deb http://192.168.100.109/ubuntu focal multiverse
+deb http://192.168.100.109/ubuntu focal-updates multiverse
+deb http://192.168.100.109/ubuntu focal-backports main restricted universe multiverse
+deb http://192.168.100.109/ubuntu focal-security main restricted
+deb http://192.168.100.109/ubuntu focal-security universe
+deb http://192.168.100.109/ubuntu focal-security multiverse
+deb http://192.168.100.109/docker focal stable
+```
+
