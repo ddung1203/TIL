@@ -126,6 +126,8 @@ Bastion을 제외한 서버는 외부 접근이 불가능하며, Bastion Host를
 
 ### Local Mirror 구축
 
+Bastion 내에 구축을 진행한다.
+
 ```bash
 sudo apt install apt-mirror apache2 -y
 ```
@@ -142,16 +144,24 @@ deb http://mirror.kakao.com/ubuntu focal-backports main restricted universe mult
 deb http://mirror.kakao.com/ubuntu focal-security main restricted
 deb http://mirror.kakao.com/ubuntu focal-security universe
 deb http://mirror.kakao.com/ubuntu focal-security multiverse
+deb https://download.docker.com/linux/ubuntu focal stable
 ```
 
 ```bash
 sudo apt-mirror
 ```
 
+> 현재 cnf 파일을 제대로 가져오지 못하는 이슈가 있어, apt-mirror 파일만 하기와 같이 변경하도록 한다.
+> 
+> [apt-mirror 참고](./apt-mirror)
+
 ```bash
-ln -s /var/spool/apt-mirror/mirror/kr.archive.ubuntu.com/ubuntu/ /var/www/html/ubuntu
+sudo ln -s /var/spool/apt-mirror/mirror/mirror.kakao.com/ubuntu/ /var/www/html/ubuntu
+sudo ln -s /var/spool/apt-mirror/mirror/download.docker.com/linux/ubuntu/ /var/www/html/docker-ce
 service apache2 restart
 ```
+
+Master 및 Node들의 `sources.list`를 하기와 같이 변경 후 `apt update`로 테스트 성공을 확인할 수 있다.
 
 `/etc/apt/sources.list`
 ```
@@ -165,6 +175,55 @@ deb http://192.168.100.109/ubuntu focal-backports main restricted universe multi
 deb http://192.168.100.109/ubuntu focal-security main restricted
 deb http://192.168.100.109/ubuntu focal-security universe
 deb http://192.168.100.109/ubuntu focal-security multiverse
-deb http://192.168.100.109/docker focal stable
+deb http://192.168.100.109/docker-ce focal stable
 ```
 
+> apt 업데이트 시 `NO_PUBKEY` 에러가 발생한다. 해당 저장소의 공개키가 시스템에 등록되어 있지 않아 발생하는 에러이며, Docker 저장소의 공개키를 시스템에 추가하여 이 문제를 해결할 수 있다.
+> 
+> ```bash
+> sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7EA0A9C3F273FCD8
+> ```
+> 
+> ```bash
+> vagrant@master:~$ sudo apt update
+> Hit:1 http://192.168.100.109/ubuntu focal InRelease
+> Hit:2 http://192.168.100.109/ubuntu focal-updates InRelease
+> Hit:3 http://192.168.100.109/ubuntu focal-backports InRelease
+> Hit:4 http://192.168.100.109/ubuntu focal-security InRelease
+> Hit:5 http://192.168.100.109/docker-ce/linux/ubuntu focal InRelease
+> Reading package lists... Done
+> Building dependency tree       
+> Reading state information... Done
+> 11 packages can be upgraded. Run 'apt list --upgradable' to see them.
+> ```
+
+### Private Docker Registry 구축
+
+```bash
+docker run -d -p 5000:5000 --restart=always --name docker-registry \
+  -v /home/vagrant/certs:/certs \
+  -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/server.crt \
+  -e REGISTRY_HTTP_TLS_KEY=/certs/server.key \
+  registry
+```
+
+```bash
+docker pull hello-world
+docker tag hello-world localhost:5000/hello-world
+```
+
+```bash
+docker push localhost:5000/hello-world
+
+curl -X GET https://localhost:5000/v2/_catalog --insecure
+curl -X GET https://localhost:5000/v2/hello-world/tags/list --insecure
+```
+
+#### Remote Host
+
+테스트 서버 환경이기에, hosts 파일과 사설 인증서를 통해 진행하겠다.
+
+`/etc/hosts`
+```
+192.168.100.109 bastion
+```
