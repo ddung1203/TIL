@@ -227,3 +227,44 @@ curl -X GET https://localhost:5000/v2/hello-world/tags/list --insecure
 ```
 192.168.100.109 bastion
 ```
+
+
+
+
+
+docker pull registry.k8s.io/kube-apiserver:v1.28.2
+docker pull registry.k8s.io/kube-controller-manager:v1.28.2
+docker pull registry.k8s.io/kube-scheduler:v1.28.2
+docker pull registry.k8s.io/kube-proxy:v1.28.2
+docker pull registry.k8s.io/pause:3.9
+docker pull registry.k8s.io/etcd:3.5.9-0
+docker pull registry.k8s.io/coredns/coredns:v1.10.1
+
+
+
+docker image save registry.k8s.io/kube-apiserver:v1.28.2
+docker image save registry.k8s.io/kube-controller-manager:v1.28.2
+docker image save registry.k8s.io/kube-scheduler:v1.28.2
+docker image save registry.k8s.io/kube-proxy:v1.28.2
+docker image save registry.k8s.io/pause:3.9
+docker image save registry.k8s.io/etcd:3.5.9-0
+docker image save registry.k8s.io/coredns/coredns:v1.10.1
+
+
+
+docker tag registry.k8s.io/kube-apiserver:v1.28.2 127.0.0.1:5000/kube-apiserver:v1.28.2
+docker tag registry.k8s.io/kube-controller-manager:v1.28.2 127.0.0.1:5000/kube-controller-manager:v1.28.2
+docker tag registry.k8s.io/kube-scheduler:v1.28.2 127.0.0.1:5000/kube-scheduler:v1.28.2
+docker tag registry.k8s.io/kube-proxy:v1.28.2 127.0.0.1:5000/kube-proxy:v1.28.2
+docker tag registry.k8s.io/etcd:3.5.9-0 127.0.0.1:5000/etcd:3.5.9-0
+docker tag registry.k8s.io/coredns/coredns:v1.10.1 127.0.0.1:5000/coredns/coredns:v1.10.1
+docker tag registry.k8s.io/pause:3.9 127.0.0.1:5000/pause:3.9
+
+docker push 127.0.0.1:5000/kube-apiserver:v1.28.2
+docker push 127.0.0.1:5000/kube-controller-manager:v1.28.2
+docker push 127.0.0.1:5000/kube-scheduler:v1.28.2
+docker push 127.0.0.1:5000/kube-proxy:v1.28.2
+docker push 127.0.0.1:5000/etcd:3.5.9-0
+docker push 127.0.0.1:5000/coredns/coredns:v1.10.1
+docker push 127.0.0.1:5000/pause:3.9
+
