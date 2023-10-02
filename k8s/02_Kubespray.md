@@ -153,7 +153,7 @@ sudo apt-mirror
 
 > 현재 cnf 파일을 제대로 가져오지 못하는 이슈가 있어, apt-mirror 파일만 하기와 같이 변경하도록 한다.
 > 
-> [apt-mirror 참고](./apt-mirror)
+> [apt-mirror 참고](./kubespray/apt-mirror)
 
 ```bash
 sudo ln -s /var/spool/apt-mirror/mirror/mirror.kakao.com/ubuntu/ /var/www/html/ubuntu
@@ -221,50 +221,83 @@ curl -X GET https://localhost:5000/v2/hello-world/tags/list --insecure
 
 #### Remote Host
 
-테스트 서버 환경이기에, hosts 파일과 사설 인증서를 통해 진행하겠다.
+각 원격 호스트 내 http를 사용하는 docker registry를 위한 insecure registry를 설정한다.
 
-`/etc/hosts`
+local server를 구축하고, 기본으로 http를 사용하지만, docker는 default로는 https 통신을 하려 하기 때문에 하기와 같이 변경한다.
+
+`/etc/docker/daemon.json`
 ```
-192.168.100.109 bastion
+{
+  "insecure-registries": ["192.168.100.109:5000"]
+}
 ```
 
+### Kuberspray Offline install을 위한 변수 및 버전 설정
 
+kubespray GitHub 내 버전 확인이 가능하며, 만약 버전이 틀리다면 checksum 에러가 발생한다.
 
+또한 현재 설정에선 Calico, container runtime은 docker를 사용하였으며, 하기와 같이 설정하였다.
 
+[offline.yml](./kubespray/offline.yml)
 
-docker pull registry.k8s.io/kube-apiserver:v1.28.2
-docker pull registry.k8s.io/kube-controller-manager:v1.28.2
-docker pull registry.k8s.io/kube-scheduler:v1.28.2
-docker pull registry.k8s.io/kube-proxy:v1.28.2
+[k8s-cluster.yml](./kubespray/k8s-cluster.yml)
+
+### Private Docker Registry 내 이미지 관리
+
+Image Pull
+
+```bash
+docker pull registry.k8s.io/kube-apiserver:v1.26.5
+docker pull registry.k8s.io/kube-controller-manager:v1.26.5
+docker pull registry.k8s.io/kube-scheduler:v1.26.5
+docker pull registry.k8s.io/kube-proxy:v1.26.5
 docker pull registry.k8s.io/pause:3.9
-docker pull registry.k8s.io/etcd:3.5.9-0
-docker pull registry.k8s.io/coredns/coredns:v1.10.1
+docker pull registry.k8s.io/etcd:3.5.6-0
+docker pull registry.k8s.io/coredns/coredns:v1.9.3
+docker pull registry.k8s.io/cpa/cluster-proportional-autoscaler:v1.8.8
 
+docker pull calico/node:v3.25.1
+docker pull calico/cni:v3.25.1
+docker pull calico/pod2daemon-flexvol:v3.25.1
+docker pull calico/kube-controllers:v3.25.1
+docker pull library/nginx:1.23.2-alpine
+```
 
+Image Tag
 
-docker image save registry.k8s.io/kube-apiserver:v1.28.2
-docker image save registry.k8s.io/kube-controller-manager:v1.28.2
-docker image save registry.k8s.io/kube-scheduler:v1.28.2
-docker image save registry.k8s.io/kube-proxy:v1.28.2
-docker image save registry.k8s.io/pause:3.9
-docker image save registry.k8s.io/etcd:3.5.9-0
-docker image save registry.k8s.io/coredns/coredns:v1.10.1
+```bash
+docker tag registry.k8s.io/kube-apiserver:v1.26.5 192.168.100.109:5000/kube-apiserver:v1.26.5
+docker tag registry.k8s.io/kube-controller-manager:v1.26.5 192.168.100.109:5000/kube-controller-manager:v1.26.5
+docker tag registry.k8s.io/kube-scheduler:v1.26.5 192.168.100.109:5000/kube-scheduler:v1.26.5
+docker tag registry.k8s.io/kube-proxy:v1.26.5 192.168.100.109:5000/kube-proxy:v1.26.5
+docker tag registry.k8s.io/etcd:3.5.6-0 192.168.100.109:5000/etcd:3.5.6-0
+docker tag registry.k8s.io/coredns/coredns:v1.9.3 192.168.100.109:5000/coredns/coredns:v1.9.3
+docker tag registry.k8s.io/pause:3.9 192.168.100.109:5000/pause:3.9
+docker tag registry.k8s.io/cpa/cluster-proportional-autoscaler:v1.8.8 192.168.100.109:5000/cpa/cluster-proportional-autoscaler:v1.8.8
 
+docker tag calico/node:v3.25.1 192.168.100.109:5000/calico/node:v3.25.1
+docker tag calico/cni:v3.25.1 192.168.100.109:5000/calico/cni:v3.25.1
+docker tag calico/pod2daemon-flexvol:v3.25.1 192.168.100.109:5000/calico/pod2daemon-flexvol:v3.25.1
+docker tag calico/kube-controllers:v3.25.1 192.168.100.109:5000/calico/kube-controllers:v3.25.1
 
+docker tag library/nginx:1.23.2-alpine 192.168.100.109:5000/library/nginx:1.23.2-alpine
+```
 
-docker tag registry.k8s.io/kube-apiserver:v1.28.2 127.0.0.1:5000/kube-apiserver:v1.28.2
-docker tag registry.k8s.io/kube-controller-manager:v1.28.2 127.0.0.1:5000/kube-controller-manager:v1.28.2
-docker tag registry.k8s.io/kube-scheduler:v1.28.2 127.0.0.1:5000/kube-scheduler:v1.28.2
-docker tag registry.k8s.io/kube-proxy:v1.28.2 127.0.0.1:5000/kube-proxy:v1.28.2
-docker tag registry.k8s.io/etcd:3.5.9-0 127.0.0.1:5000/etcd:3.5.9-0
-docker tag registry.k8s.io/coredns/coredns:v1.10.1 127.0.0.1:5000/coredns/coredns:v1.10.1
-docker tag registry.k8s.io/pause:3.9 127.0.0.1:5000/pause:3.9
+Image Push
+```bash
+docker push 192.168.100.109:5000/kube-apiserver:v1.26.5
+docker push 192.168.100.109:5000/kube-controller-manager:v1.26.5
+docker push 192.168.100.109:5000/kube-scheduler:v1.26.5
+docker push 192.168.100.109:5000/kube-proxy:v1.26.5
+docker push 192.168.100.109:5000/etcd:3.5.6-0
+docker push 192.168.100.109:5000/coredns/coredns:v1.9.3
+docker push 192.168.100.109:5000/pause:3.9
+docker push 192.168.100.109:5000/cpa/cluster-proportional-autoscaler:v1.8.8
 
-docker push 127.0.0.1:5000/kube-apiserver:v1.28.2
-docker push 127.0.0.1:5000/kube-controller-manager:v1.28.2
-docker push 127.0.0.1:5000/kube-scheduler:v1.28.2
-docker push 127.0.0.1:5000/kube-proxy:v1.28.2
-docker push 127.0.0.1:5000/etcd:3.5.9-0
-docker push 127.0.0.1:5000/coredns/coredns:v1.10.1
-docker push 127.0.0.1:5000/pause:3.9
+docker push 192.168.100.109:5000/calico/node:v3.25.1
+docker push 192.168.100.109:5000/calico/cni:v3.25.1
+docker push 192.168.100.109:5000/calico/pod2daemon-flexvol:v3.25.1
+docker push 192.168.100.109:5000/calico/kube-controllers:v3.25.1
 
+docker push 192.168.100.109:5000/library/nginx:1.23.2-alpine
+```
