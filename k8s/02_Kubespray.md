@@ -236,6 +236,8 @@ local server를 구축하고, 기본으로 http를 사용하지만, docker는 de
 
 kubespray GitHub 내 버전 확인이 가능하며, 만약 버전이 틀리다면 checksum 에러가 발생한다.
 
+버전과 이미지의 경우 `roles/download/defaults/main/main.yml`에서 확인이 가능하다. 미리 다운받아 놓자.
+
 또한 현재 설정에선 Calico, container runtime은 docker를 사용하였으며, 하기와 같이 설정하였다.
 
 [offline.yml](./kubespray/offline.yml)
