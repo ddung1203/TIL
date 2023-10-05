@@ -235,3 +235,53 @@ maxUnavavailable이 30%로 설정되면 이전 또는 새 ReplicaSet과 관계�
 +) minReadySeconds: 컨테이너가 충돌하지 않고 Pod가 사용 가능한 것으로 간주되기까지 대기하는 시간. 기본값은 0이며, Pod가 준비되는 즉시 사용할 수 있다는 뜻이다.
 
 +) progressDeadlineSeconds: 배포가 진행에 실패했다고 보고하기까지 대기하는 시간을 지정.
+
+### Graceful Termionation
+
+Kubernetes의 Rolling Update에서는 Pod가 순차적으로 정지되고 새로운 Pod로 교체되는 과정이 일어난다. 하지만 만약 삭제 중인 Pod의 컨테이너가 해당 시점에 사용자로부터 받은 요청을 처리 중이라면 사용자는 애플리케이션의 응답을 받지 못한다.
+
+상기와 같은 일을 방지하려면 애플리케이션이 확실히 종료된 다음에 컨테이너를 삭제해야 한다.
+
+Pod에 종료 명령이 전달되면 Pod에 속하는 컨테이너 프로세스에도 SIGTERM 시그널이 전달된다. SIGTERM 시그널을 받은 컨테이너는 `terminationGracePeriodSeconds`에 설정된 시간 안에 정상적으로 애플리케이션이 종료되지 않으면 SIGKILL 시그널을 보내 컨테이너를 강제 종료한다.
+
+- Pod 종료 시 kubelet에서 SIGTERM 신호를 송출하고, 컨테이너는 SIGKILL를 수신할 때까지 정상 종료를 위해 대기한다.
+- 컨테이너에서 SIGTERM 신호를 수신하지 못하는 경우를 대비해, preStop 훅에 정상 종료 동작을 구현해야 한다.
+- Pod의 `terminationGracePeriodSecond` 속성을 통해 정상 종료 동작이 수행되는 기간을 설정할 수 있다.
+- 만약 Grace Period 안에 정상 종료를 마치지 못하면 컨테이너는 곧바로 종료된다.
+
+**Kubernetes의 termination life cycle**
+
+- Pod의 상태가 Termination으로 변경되며 해당 Pod로의 트래픽이 차단
+- Pod 내 모든 컨테이너에 SIGTERM 신호가 전달되며 정상 종료 시간이 카운트다운
+- 만약 정상 종료 시간 내에 애플리케이션을 종료하지 못했다면 SIGKILL 신호가 전달되며 곧바로 컨테이너 종료
+
+정상 종료 동작을 구현해두지 않거나 SIGTERM 신호를 받지 못할 경우 정상 종료 대신 애플리케이션이 바로 종료될 수 있다.
+
+이처럼 컨테이너가 SIGTERM 신호에 반응하지 못하는 상황을 대비해 preStop 훅을 사용한다.
+
+**preStop 훅**
+
+preStop 훅은 컨테이너의 종료 생명주기의 시작과 동시에 실행되는 동작으로, SIGTERM 신호가 전달되기 전에 수행된다. 이 점을 이용해 컨테이너가 SIGTERM 신호에 반응하지 못하더라도 preStop 훅에서 정상 종료 동작을 실행하도록 한다.
+
+preStop 훅의 예시는 하기와 같다.
+
+preStop 훅에 정의된 동작은 컨테이너가 종료됨과 동시에 Pod의 `terminationGracePeriodSeconds` 속성에 정의된 정상 종료 시간 동안 실행된다.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/usr/sbin/nginx","-s","quit"]
+      terminationGracePeriodSeconds: 60
+```
+
