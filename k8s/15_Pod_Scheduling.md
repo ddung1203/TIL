@@ -232,6 +232,42 @@ spec:
 - `podAffinity` : Pod 선호도 스케줄링 규칙
 - `podAntiAffinity` : Pod의 반선호도 스케줄링 규칙 - 노드 자체의 라벨이 아닌, 노드에서 이미 실행 중인 Pod 라벨을 기반으로 하는 규칙 포함. 다른 Pod와 동일한 노드에 예약되지 않아야 하는 Pod를 구성할 수 있다.
 
+> **노드가 장애를 일으켰을 때 Pod Anti Affinity를 이용한 장애에 강한 Pod 배치 전략 수립**
+> 
+> ReplicaSet의 오토힐링 기능으로 노드가 다운된 순간부터 다른 노드로 Pod가 재배치되는 동안에는 다운타임을 피할 수 없다. 그러므로 임의의 노드가 다운돼도 문제가 발생하지 않도록 Pod가 여러 노드에 나눠 배치돼야 한다. 가령 `replicas=3`일 때 세 Pod가 모두 같은 노드에 배치되고, 노드가 다운되면 Pod가 모두 정지되므로 다운타임이 발생한다. Pod Anti Affinity로 Pod 간의 상성을 고려한 Pod 배치 전략을 규칙으로 정의한다.
+> 
+> ```yaml
+> apiVersion: apps/v1
+> kind: Deployment
+> metadata:
+>   name: myweb
+> spec:
+>   replicas: 3
+>   selector:
+>     matchLabels:
+>       app: myweb
+>   template:
+>     metadata:
+>       labels:
+>         app: myweb
+>     spec:
+>       affinity:
+>         podAntiAffinity:
+>           requiredDuringSchedulingIgnoredDuringExecution:
+>             - labelSelector:
+>                 matchLabels:
+>                   key: app
+>                   operator: In
+>                   values:
+>                   - myweb
+>               topologyKey: "kubernetes.io/hostname"
+>       containers:
+>         - name: myweb
+>           image: ddung1203/realmytrip:latest
+> ```
+> 
+> 또한 배치잡으로 일시적으로 CPU 자원을 많이 사용하는 Pod를 실행하는 경우, 같은 노드에 배치된 다른 Pod의 성능을 떨어트린다. 이런 경우, 상기와 같은 방법으로 CPU 부하가 큰 Pod를 Node Affinity로 격리하는 등 여러 배치 전략을 세울 수 있다.
+
 ## Cordon & Drain
 
 Cordon : 스케줄링 금지
