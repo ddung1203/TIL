@@ -34,6 +34,12 @@
 - readiness
 - startup : 애플리케이션이 시작되었는지 확인, 성공하지 않으면 나머지 프로브 비활성화
 
+livenessProbe는 애플리케이션이 정상 상태를 유지하고 있는지 지속해서 검사하는 것이고, readinessProbe는 애플리케이션이 시작된 뒤 초기화 작업이 마무리되어 준비가 되었는지 검사하는 것이 목적이다.
+
+livenessProbe 검사에 실패했다는 것은 애플리케이션 내부에서 문제가 발생했다는 것이기 때문에 컨테이너를 재시작한다.
+
+readinessProbe가 실패했다는 것은 애플리케이션이 실행 직후 초기화 동의 작업으로 인해 아직 준비되지 않다는 뜻이기 때문에 사용자의 요청이 전달되지 않도록 서비스의 라우팅 대상에서 Pod의 IP를 제외한다. 어느 정도 시간이 지나 애플리케이션의 초기화 작어빙 끝나 준비가 되면 readinessProbe 검사에 성공하고 사용자의 요청이 Pod로 전달될 수 있게 서비스의 라우팅 대상에 Pod의 IP가 추가된다. 
+
 ### 프로브 매커니즘
 
 - httpGet
@@ -187,3 +193,28 @@ readinessProbe의 실패의 경우 RESTARTS 횟수가 증가하지 않으며, �
 - successThreshold : 성공 임계값
 - initialDelaySecond : 프로브 유예 기간
 - timeoutSeconds : 프로브 타임아웃
+
+## 리소스 관리
+
+### 기본 리소스 요청과 상한
+
+컨테이너의 리소스 요구 사항을 매번 미리 파악하는 것은 어렵다. `LimitRange` 리소스를 사용하면 네임스페이스 내 모든 컨테이너의 기본 요청과 상한을 설정할 수 있다.
+
+리소스 요청과 상한을 지정하지 않은 네임스페이스의 모든 컨테이너는 LimitRange에서 기본값을 상속받는다. 예를 들어 지정된 cpu 요청이 없는 컨테이너는 LimitRange에서 200m 값을 상속받는다. 마찬가지로 지정된 memory 상한이 없는 컨테이너는 256Mi를 상속받는다.
+
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: demo-limitrange
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "256Mi"
+    defaultRequest:
+      cpu: "200m"
+      memoty: "128Mi"
+    type: Container
+```
+
