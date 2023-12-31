@@ -2,11 +2,14 @@
 
 ## 문제
 
+`Cluster Upgrade`
 ```
 ■ 작업 클러스터: hk8s
 마스터 노드의 모든 Kubernetes control plane 및 node 구성 요소를 버전 1.27.6으로 업그레이드합니다.
 master 노드를 업그레이드하기 전에 drain 하고 업그레이드 후에 uncordon해야 합니다.
 ```
+
+https://kubernetes.io/ko/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
 
 ### 컨트롤 플레인 노드 업그레이드
 

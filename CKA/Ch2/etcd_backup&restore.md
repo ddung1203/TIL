@@ -5,9 +5,10 @@
 - etcd restore
   - 별도의 db 공간으로 다시 원래대로 복원
 
-https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
 
 ## 문제
+
+`ETCD backup`
 ```
 ■ 작업 클러스터: k8s
 https://127.0.0.1:2379에서 실행 중인 etcd의 snapshot을 생성하고 snapshot을 /data/etcd-snapshot.db에 저장합니다.
@@ -17,6 +18,8 @@ etcdctl을 사용하여 서버에 연결하기 위해 다음 TLS 인증서/키�
 • Client certificate: /etc/kubernetes/pki/etcd/server.crt
 • Client key: /etc/Kubernetes/pki/etcd/server.key
 ```
+
+https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
 
 
 ```bash
