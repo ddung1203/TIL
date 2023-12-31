@@ -7,7 +7,7 @@
 
 https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
 
-### 문제
+## 문제
 ```
 ■ 작업 클러스터: k8s
 https://127.0.0.1:2379에서 실행 중인 etcd의 snapshot을 생성하고 snapshot을 /data/etcd-snapshot.db에 저장합니다.
