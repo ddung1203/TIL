@@ -5,5 +5,5 @@ kubectl config get-contexts
 ```
 
 ```bash
-kubectl config set-context <NAME>
+kubectl config use-context <NAME>
 ```
