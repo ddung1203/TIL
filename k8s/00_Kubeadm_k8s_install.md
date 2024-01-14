@@ -130,6 +130,30 @@ sudo kubeadm reset
 sudo kubeadm init --control-plane-endpoint 192.168.56.100 --pod-network-cidr 172.16.0.0/16 --apiserver-advertise-address 192.168.56.100
 ```
 
+> ```bash
+> [preflight] Running pre-flight checks
+> error execution phase preflight: [preflight] Some fatal errors occurred:
+>         [ERROR CRI]: container runtime is not running: output: time="2024-01-14T03:13:39Z" level=fatal msg="validate service connection: validate CRI v1 runtime API for endpoint \"unix:///var/run/containerd/containerd.sock\": rpc error: code = Unimplemented desc = unknown service runtime.v1.RuntimeService"
+> , error: exit status 1
+> [preflight] If you know what you are doing, you can make a check non-fatal with `--ignore-preflight-errors=...`
+> To see the stack trace of this error execute with --v=5 or higher
+> ```
+> 
+> container runtime을 설치 하였음에도 불구하고 상기와 같이 에러가 나온다면, 다음 링크를 참고한다.
+> 
+> https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
+> 
+> containerd를 패키지 매니저를 통해 설치했다면, CRI integration plugin이 기본값으로 disabled 되어있다. 따라서 `etc/containerd/config.toml` 파일을 삭제하거나, 예외처리를 한 후 `containerd`를 restart 한다.
+
+> 기본적인 설정부터 확인하자. VirtualBox 내 DHCP 서버의 설정 중 최저 서버 주소와 최고 서버 주소를 기본값으로 사용을 했는데, 이로 인한 문제로 오랜 시간 디버깅을 하였다. 문제 발생 시 항상 low level부터 검증하는 시각을 가지자.
+> 
+> `$ sudo kubeadm join 192.168.56.100:6443 --token 959tyd.c25osmm68aoivcy3 --discovery-token-ca-cert-hash sha256:44b9795ea70f4682d6da7c4f3201cdb8cb5512664066a57dc684d79bf7640ba6 --v=5`
+> [preflight] Running pre-flight checks
+> I0114 11:25:06.561804    4363 join.go:529] [preflight] Discovering cluster-info
+> I0114 11:25:06.562571    4363 token.go:80] [discovery] Created cluster-info discovery client, requesting info from "192.168.56.100:6443"
+> I0114 11:25:06.566754    4363 token.go:217] [discovery] Failed to request cluster-info, will try again: Get "https://192.168.56.100:6443/api/v1/namespaces/kube-public/configmaps/cluster-info?timeout=10s": dial tcp 192.168.56.100:6443: connect: protocol not available
+> I0114 11:25:13.867261    4363 token.go:217] [discovery] Failed to request cluster-info, will try again: Get "https://192.168.56.100:6443/api/v1/namespaces/kube-public/configmaps/cluster-info?timeout=10s": dial tcp 192.168.56.100:6443: connect: protocol not available
+
 ``` bash
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
