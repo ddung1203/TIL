@@ -120,6 +120,29 @@ sudo systemctl daemon-reload && sudo systemctl restart kubelet
 > systemd란, Linux 배포판에서 유닉스 시스템 V나 BSD init 시스템 대신 사용자 공간을 부트스트래핑하고 최종적으로 모든 프로세스들을 관리하는 init 시스템이다.
 > 즉, PID가 1인 프로세스로 부팅부터 서비스 관리, 로그 관리 등 시스템 전반적인 영역을 관리한다.
 
+IPv4를 포워딩하여 iptables가 브릿지된 트래픽을 보게 하기
+
+```bash
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# 필요한 sysctl 파라미터를 설정하면, 재부팅 후에도 값이 유지된다.
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+# 재부팅하지 않고 sysctl 파라미터 적용하기
+sudo sysctl --system
+```
+
+
 ### k8s 클러스터 생성
 `kubeadm init` 실패 시
 ``` bash
