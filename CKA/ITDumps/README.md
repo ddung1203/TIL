@@ -364,3 +364,182 @@ ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 \
   --cacert=/opt/KUCM00302/ca.crt --cert=/opt/KUCM00302/etcd-client.crt --key=/opt/KUCM00302/etcd-client.key \
   snapshot save /src/data/etcd-snapshot.db
 ```
+
+## 26
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: non-persistent-redis
+  namespace: staging
+spec:
+  containers:
+  - name: redis
+    image: redis
+    volumeMounts:
+    - name: cache-control
+      mountPath: /data/redis
+  volumes:
+  - name: cache-control
+    emptyDir: {}
+```
+
+## 27
+
+```bash
+# Taint 조회
+kubectl get nodes -o jsonpath="{.items[*].spec.taints}"
+
+# Node 조회
+kubectl get nodes
+
+echo 2 > /opt/KUCC00104/kucc00104.txt
+```
+
+## 28
+
+1.27 to 1.28로 가정
+
+```bash
+sudo apt-mark unhold kubeadm && \
+sudo apt-get update && sudo apt-get install -y kubeadm='1.28.2-00' && \
+sudo apt-mark hold kubeadm
+
+sudo kubeadm upgrade apply v1.28.2
+
+kubectl drain mk8s-master-0 --ignore-daemonsets
+
+sudo apt-mark unhold kubelet kubectl && \
+sudo apt-get update && sudo apt-get install -y kubelet='1.28.2-00' kubectl='1.28.2-00' && \
+sudo apt-mark hold kubelet kubectl
+
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+kubectl uncordon mk8s-master-0
+```
+
+## 29
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+  - name: redis-container
+    image: redis
+  - name: consul-container
+    image: consul
+```
+
+## 30
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kucc8
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  - name: redis
+    image: redis
+  - name: memcached
+    image: memcached
+```
+
+## 31
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: front-end-service
+spec:
+  type: NodePort
+  # 존재하는 Pod의 label을 작성
+  selector:
+    app: front-end
+  ports:
+    - port: 80
+      targetPort: 80
+```
+
+## 32
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pv-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: csi-hostpath-sc
+```
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-server
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      volumeMounts:
+      - name: mypd
+        mountPath: /usr/share/nginx/html
+  volumes:
+    - name: mypd
+      persistentVolumeClaim:
+        claimName: pv-volume
+```
+
+```bash
+kubectl edit pvc pv-volume --record
+# capaty 10Mi to 70Mi
+```
+
+## 33
+
+```bash
+kubectl drain ek8s-node-1 --ignore-daemonsets
+```
+
+## 34
+
+```bash
+# Taint 조회
+kubectl describe nodes | grep Taints
+
+# Node 조회
+kubectl get nodes
+
+echo 2 > /opt/KUCC00104/kucc00104.txt
+```
+
+## 35
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+```
+
