@@ -120,6 +120,29 @@ sudo systemctl daemon-reload && sudo systemctl restart kubelet
 > systemd란, Linux 배포판에서 유닉스 시스템 V나 BSD init 시스템 대신 사용자 공간을 부트스트래핑하고 최종적으로 모든 프로세스들을 관리하는 init 시스템이다.
 > 즉, PID가 1인 프로세스로 부팅부터 서비스 관리, 로그 관리 등 시스템 전반적인 영역을 관리한다.
 
+IPv4를 포워딩하여 iptables가 브릿지된 트래픽을 보게 하기
+
+```bash
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# 필요한 sysctl 파라미터를 설정하면, 재부팅 후에도 값이 유지된다.
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+# 재부팅하지 않고 sysctl 파라미터 적용하기
+sudo sysctl --system
+```
+
+
 ### k8s 클러스터 생성
 `kubeadm init` 실패 시
 ``` bash
@@ -129,6 +152,30 @@ sudo kubeadm reset
 ``` bash
 sudo kubeadm init --control-plane-endpoint 192.168.56.100 --pod-network-cidr 172.16.0.0/16 --apiserver-advertise-address 192.168.56.100
 ```
+
+> ```bash
+> [preflight] Running pre-flight checks
+> error execution phase preflight: [preflight] Some fatal errors occurred:
+>         [ERROR CRI]: container runtime is not running: output: time="2024-01-14T03:13:39Z" level=fatal msg="validate service connection: validate CRI v1 runtime API for endpoint \"unix:///var/run/containerd/containerd.sock\": rpc error: code = Unimplemented desc = unknown service runtime.v1.RuntimeService"
+> , error: exit status 1
+> [preflight] If you know what you are doing, you can make a check non-fatal with `--ignore-preflight-errors=...`
+> To see the stack trace of this error execute with --v=5 or higher
+> ```
+> 
+> container runtime을 설치 하였음에도 불구하고 상기와 같이 에러가 나온다면, 다음 링크를 참고한다.
+> 
+> https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
+> 
+> containerd를 패키지 매니저를 통해 설치했다면, CRI integration plugin이 기본값으로 disabled 되어있다. 따라서 `etc/containerd/config.toml` 파일을 삭제하거나, 예외처리를 한 후 `containerd`를 restart 한다.
+
+> 기본적인 설정부터 확인하자. VirtualBox 내 DHCP 서버의 설정 중 최저 서버 주소와 최고 서버 주소를 기본값으로 사용을 했는데, 이로 인한 문제로 오랜 시간 디버깅을 하였다. 문제 발생 시 항상 low level부터 검증하는 시각을 가지자.
+> 
+> `$ sudo kubeadm join 192.168.56.100:6443 --token 959tyd.c25osmm68aoivcy3 --discovery-token-ca-cert-hash sha256:44b9795ea70f4682d6da7c4f3201cdb8cb5512664066a57dc684d79bf7640ba6 --v=5`
+> [preflight] Running pre-flight checks
+> I0114 11:25:06.561804    4363 join.go:529] [preflight] Discovering cluster-info
+> I0114 11:25:06.562571    4363 token.go:80] [discovery] Created cluster-info discovery client, requesting info from "192.168.56.100:6443"
+> I0114 11:25:06.566754    4363 token.go:217] [discovery] Failed to request cluster-info, will try again: Get "https://192.168.56.100:6443/api/v1/namespaces/kube-public/configmaps/cluster-info?timeout=10s": dial tcp 192.168.56.100:6443: connect: protocol not available
+> I0114 11:25:13.867261    4363 token.go:217] [discovery] Failed to request cluster-info, will try again: Get "https://192.168.56.100:6443/api/v1/namespaces/kube-public/configmaps/cluster-info?timeout=10s": dial tcp 192.168.56.100:6443: connect: protocol not available
 
 ``` bash
 mkdir -p $HOME/.kube
