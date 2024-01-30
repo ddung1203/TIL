@@ -142,6 +142,16 @@ EOF
 sudo sysctl --system
 ```
 
+containerd를 CRI 런타임으로 사용하기 위한 설정
+
+```bash
+sudo mkdir -p /etc/containerd
+sudo containerd config default | sudo tee /etc/containerd/config.toml
+sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+
+sudo systemctl restart containerd
+```
+
 
 ### k8s 클러스터 생성
 `kubeadm init` 실패 시
