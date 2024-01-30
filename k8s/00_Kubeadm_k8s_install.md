@@ -21,32 +21,27 @@ Pod에서 컨테이너를 실행하기 위해, Kubernetes는 컨테이너 런타
 |CRI-O|unix:///var/run/crio/crio.sock|
 |도커 엔진 (cri-dockerd 사용)|unix:///var/run/cri-dockerd.sock|
 
-**Docker Install**
+**containerd Install**
 
-``` bash
-# Update the apt package index and install packages to allot apt to use repository over HTTPS
-sudo apt-get update
-sudo apt-get install \
-    ca-certificates \
-    curl \
-    gnupg
+https://github.com/containerd/containerd/blob/main/docs/getting-started.md
 
-# Add Docker's official GPG key
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-# Use the following command to set up the repository
-echo \
-  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```bash
+wget https://github.com/containerd/containerd/releases/download/v1.7.12/containerd-1.7.12-linux-amd64.tar.gz
+sudo tar Cxzvf /usr/local containerd-1.7.12-linux-amd64.tar.gz
 
-# Update the apt packages index
-sudo apt-get update
+wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+sudo mkdir -p /usr/local/lib/systemd/system
+sudo mv containerd.service /usr/local/lib/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now containerd
 
-# Install Docker Engine, containerd, and Docker Compose
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+wget https://github.com/opencontainers/runc/releases/download/v1.1.11/runc.amd64
+sudo install -m 755 runc.amd64 /usr/local/sbin/runc
+
+wget https://github.com/containernetworking/plugins/releases/download/v1.4.0/cni-plugins-linux-amd64-v1.4.0.tgz
+sudo mkdir -p /opt/cni/bin
+sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.4.0.tgz
 ```
 
 1.22.8
