@@ -45,6 +45,14 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM:-${Z
 source ~/.zshrc
 ```
 
+#### root 사용자 zsh 적용
+
+```bash
+sudo chsh -s /bin/zsh root
+sudo cp ~/.zshrc /root/
+sudo cp -r ~/.oh-my-zsh /root/
+```
+
 ### VIM이란?
 Linux의 대표적인 텍스트 편집기 vi와 호환되는 텍스트 편집기
 
